@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">NavMusic</string>
+    <string name="title_home">NavMusic</string>
+    <string name="title_dashboard">Search</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="redirect_text">跳转</string>
+    <string name="search">搜索</string>
+    <string name="on_playing">正在播放：</string>
+    <string name="none">无</string>
+</resources>

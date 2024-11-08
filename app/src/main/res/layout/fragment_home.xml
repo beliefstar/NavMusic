@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".ui.home.HomeFragment">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="35sp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:paddingStart="15sp"
+            android:paddingEnd="15sp"
+            android:textSize="12sp"
+            android:text="@string/on_playing"/>
+
+        <Spinner
+            android:id="@+id/sp_play_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:spinnerMode="dropdown" />
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/tv_play_music_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="10sp"
+        android:paddingBottom="10sp"
+        android:paddingStart="15sp"
+        android:paddingEnd="15sp"
+        android:gravity="center_vertical"
+        android:textSize="20sp"
+        android:text="@string/none"/>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal">
+        <Button
+            android:id="@+id/btn_previous_music"
+            android:layout_width="80sp"
+            android:layout_height="40sp"
+            android:text="上一曲"
+            android:textSize="11sp"
+            android:layout_gravity="bottom"
+            />
+
+        <Button
+            android:id="@+id/btn_play"
+            android:layout_width="60sp"
+            android:layout_height="60sp"
+            android:background="@drawable/ic_play"
+            android:layout_marginStart="10sp"
+            android:layout_marginEnd="10sp"
+            />
+        <Button
+            android:id="@+id/btn_next_music"
+            android:layout_width="80sp"
+            android:layout_height="40sp"
+            android:text="下一曲"
+            android:textSize="11sp"
+            android:layout_gravity="bottom"
+            />
+    </LinearLayout>
+    <ListView
+        android:id="@+id/lv_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</LinearLayout>
