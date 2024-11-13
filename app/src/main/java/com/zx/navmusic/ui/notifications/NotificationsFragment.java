@@ -41,6 +41,7 @@ public class NotificationsFragment extends Fragment {
         if (instance instanceof LocalMusicProvider) {
             LocalMusicProvider provider = (LocalMusicProvider) instance;
             binding.cbUseLocalMode.setChecked(provider.getUseLocalMode());
+            binding.etBbsToken.setText(provider.bbsToken);
         }
 
         binding.cbUseLocalMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -67,6 +68,27 @@ public class NotificationsFragment extends Fragment {
                 if (instance instanceof CloudMusicProvider) {
                     CloudMusicProvider provider = (CloudMusicProvider) instance;
                     provider.setToken(s.toString());
+                }
+            }
+        });
+
+        binding.etBbsToken.addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (instance instanceof LocalMusicProvider) {
+                    LocalMusicProvider provider = (LocalMusicProvider) instance;
+                    provider.bbsToken = s.toString();
                 }
             }
         });

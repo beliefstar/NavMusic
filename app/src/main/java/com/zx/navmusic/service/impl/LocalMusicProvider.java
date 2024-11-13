@@ -39,9 +39,11 @@ public class LocalMusicProvider extends CloudMusicProvider {
 
     private boolean useLocalMode = false;
 
+    public String bbsToken = "GTX1ABMONOcFUu_2B2wFVr15JHc23Caub8VdR3pPjFkMCe_2Bb9HwLmPVB9V99nkczUYCExsAEY9GczcJt2LL195QdUzAFZ1Eq3Z";
+
     @Override
     public void refresh(Context ctx) {
-//        AsyncTask.run(() -> {
+//        AsyncTask.run(() -> {我的天空
 //            List<MusicItem> mis = doFetchList();
 //            postValue(mis);
 //
@@ -212,7 +214,10 @@ public class LocalMusicProvider extends CloudMusicProvider {
         }
         try {
             String url = "https://www.hifini.com/" + si.thread;
-            String listContent = HttpUtil.get(url);
+            HttpRequest req = HttpRequest.get(url)
+                    .header("Cookie", "bbs_token=" + bbsToken);
+            String listContent = req.execute().body();
+//            String listContent = HttpUtil.get(url);
             List<String> titles = ReUtil.findAll("music: \\[(.*?)\\]", listContent, 1);
             return parsePlayUrl(titles.get(0));
         } catch (Exception e) {
