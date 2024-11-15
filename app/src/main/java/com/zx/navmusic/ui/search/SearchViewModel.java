@@ -43,6 +43,17 @@ public class SearchViewModel extends ViewModel {
         });
     }
 
+
+    public void searchLocal(String keyword) {
+        List<SearchItem> sis = musicProvider.searchLocal(keyword);
+
+        if (sis == null) {
+            sis = Collections.emptyList();
+        }
+
+        data.postValue(sis);
+    }
+
     public CompletableFuture<MusicItem> choose(FragmentActivity activity, int position) {
         SearchItem searchItem = data.getValue().get(position);
 //        App.toast("点击了 name:{}, ref: {}", searchItem.name, searchItem.ref);

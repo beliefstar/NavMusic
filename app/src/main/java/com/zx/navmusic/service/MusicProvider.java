@@ -20,6 +20,8 @@ public interface MusicProvider {
 
     CompletableFuture<List<SearchItem>> search(FragmentActivity activity, String keyword);
 
+    List<SearchItem> searchLocal(String keyword);
+
     int getIndexById(String musicId);
 
     MusicItem getItem(int index);

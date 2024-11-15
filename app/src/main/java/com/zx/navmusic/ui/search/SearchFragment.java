@@ -2,6 +2,8 @@ package com.zx.navmusic.ui.search;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,7 +22,10 @@ import com.zx.navmusic.MusicService;
 import com.zx.navmusic.R;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.bean.MusicItem;
+import com.zx.navmusic.common.bean.SearchItem;
 import com.zx.navmusic.databinding.FragmentSearchBinding;
+import com.zx.navmusic.service.MusicLiveProvider;
+import com.zx.navmusic.service.MusicProvider;
 import com.zx.navmusic.ui.UIFragment;
 
 import java.util.List;
@@ -56,6 +61,8 @@ public class SearchFragment extends Fragment {
 
         binding.btnSearch.setOnClickListener(this::onSearchClick);
         binding.lvSearch.setOnItemClickListener(this::onItemClick);
+
+        binding.etSearchKeyword.addTextChangedListener(new SearchTextChangeListener(searchViewModel));
 
         Log.d(App.App_Name, "Dashboard -- onCreate()");
         return root;
@@ -95,27 +102,6 @@ public class SearchFragment extends Fragment {
         Bundle bundle = new Bundle();
         NavController navController = Navigation.findNavController(activity, R.id.nav_host_fragment_activity_main);
         navController.navigate(R.id.navigation_home, bundle);
-
-//        FragmentActivity activity = getActivity();
-//        future.whenComplete((mi, ex) -> {
-//            try {
-//                if (ex != null) {
-//                    App.toast("获取失败{}", ex.getMessage());
-//                    return;
-//                }
-//                App.log("获取成功 activity: {}, mi:{}", activity != null, mi);
-//                if (mi != null && activity != null) {
-//                    activity.runOnUiThread(() -> {
-//                        Bundle bundle = new Bundle();
-//                        bundle.putString(App.MUSIC_ID, mi.id);
-//                        NavController navController = Navigation.findNavController(activity, R.id.nav_host_fragment_activity_main);
-//                        navController.navigate(R.id.navigation_home, bundle);
-//                    });
-//                }
-//            } finally {
-//                choosing.set(false);
-//            }
-//        });
     }
 
     private void onSearchClick(View view) {
@@ -130,5 +116,28 @@ public class SearchFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    public static class SearchTextChangeListener implements TextWatcher {
+        SearchViewModel searchViewModel;
+
+        public SearchTextChangeListener(SearchViewModel searchViewModel) {
+            this.searchViewModel = searchViewModel;
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            searchViewModel.searchLocal(s.toString());
+        }
     }
 }
