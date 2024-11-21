@@ -2,7 +2,6 @@ package com.zx.navmusic.service;
 
 import android.content.Context;
 
-import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.LiveData;
 
 import com.zx.navmusic.common.bean.MusicItem;
@@ -12,7 +11,6 @@ import com.zx.navmusic.service.impl.LocalMusicProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import cn.hutool.core.collection.CollUtil;
 

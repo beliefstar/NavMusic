@@ -22,10 +22,7 @@ import com.zx.navmusic.MusicService;
 import com.zx.navmusic.R;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.bean.MusicItem;
-import com.zx.navmusic.common.bean.SearchItem;
 import com.zx.navmusic.databinding.FragmentSearchBinding;
-import com.zx.navmusic.service.MusicLiveProvider;
-import com.zx.navmusic.service.MusicProvider;
 import com.zx.navmusic.ui.UIFragment;
 
 import java.util.List;
@@ -64,7 +61,7 @@ public class SearchFragment extends Fragment {
 
         binding.etSearchKeyword.addTextChangedListener(new SearchTextChangeListener(searchViewModel));
 
-        Log.d(App.App_Name, "Dashboard -- onCreate()");
+        Log.d(App.App_Name, "Search -- onCreate()");
         return root;
     }
 
@@ -137,7 +134,10 @@ public class SearchFragment extends Fragment {
 
         @Override
         public void afterTextChanged(Editable s) {
-            searchViewModel.searchLocal(s.toString());
+            String keyword = s.toString();
+            if (StrUtil.isNotBlank(keyword)) {
+                searchViewModel.searchLocal(keyword);
+            }
         }
     }
 }

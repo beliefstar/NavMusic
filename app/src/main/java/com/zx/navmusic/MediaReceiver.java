@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 
 public class MediaReceiver extends BroadcastReceiver {
     public static final String ACTION_PLAY_PAUSE = "nav_music_global_action_play_pause";
@@ -31,6 +32,11 @@ public class MediaReceiver extends BroadcastReceiver {
         } else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
             // 蓝牙连接
         } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+            // 蓝牙断开连接
+            intent = new Intent(context, MusicService.class);
+            intent.setAction(MusicService.ACTION_PAUSE);
+            context.startForegroundService(intent);
+        } else if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(action)) {
             // 蓝牙断开连接
             intent = new Intent(context, MusicService.class);
             intent.setAction(MusicService.ACTION_PAUSE);

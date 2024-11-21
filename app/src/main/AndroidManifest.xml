@@ -43,13 +43,14 @@
         </activity>
 
         <receiver android:name=".MediaReceiver"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="com.zx.navmusic.MediaReceiver.ACTION_PLAY_PAUSE"/>
                 <action android:name="com.zx.navmusic.MediaReceiver.ACTION_PREV"/>
                 <action android:name="com.zx.navmusic.MediaReceiver.ACTION_NEXT"/>
                 <action android:name="android.bluetooth.device.action.ACL_CONNECTED"/>
                 <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED"/>
+                <action android:name="android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY"/>
             </intent-filter>
         </receiver>
     </application>

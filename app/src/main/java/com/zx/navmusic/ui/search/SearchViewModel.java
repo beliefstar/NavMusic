@@ -51,6 +51,7 @@ public class SearchViewModel extends ViewModel {
             sis = Collections.emptyList();
         }
 
+        App.log("searchLocal: {} - {}", keyword, sis);
         data.postValue(sis);
     }
 
