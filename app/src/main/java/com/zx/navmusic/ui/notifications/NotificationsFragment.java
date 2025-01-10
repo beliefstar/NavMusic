@@ -1,5 +1,6 @@
 package com.zx.navmusic.ui.notifications;
 
+import android.content.pm.PackageInfo;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -32,6 +33,12 @@ public class NotificationsFragment extends Fragment {
 
 //        final TextView textView = binding.textNotifications;
 //        notificationsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+
+        try {
+            PackageInfo packageInfo = getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), 0);
+            binding.version.setText(packageInfo.versionName);
+        } catch (Exception e) {
+        }
 
         MusicLiveProvider instance = MusicLiveProvider.getInstance();
         if (instance instanceof CloudMusicProvider) {

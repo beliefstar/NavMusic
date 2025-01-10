@@ -23,6 +23,15 @@
     <!--            android:layout_weight="8"/>-->
     <!--    </LinearLayout>-->
 
+
+    <TextView
+        android:id="@+id/version"
+        android:layout_width="wrap_content"
+        android:layout_height="50sp"
+        android:textSize="20sp"
+        android:textAlignment="center"
+        android:text="token"/>
+
     <androidx.appcompat.widget.AppCompatEditText
         android:id="@+id/et_bbs_token"
         android:layout_width="0dp"
