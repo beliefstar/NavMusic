@@ -19,13 +19,17 @@ import com.zx.navmusic.common.SignatureUtil;
 import com.zx.navmusic.common.bean.MusicItem;
 import com.zx.navmusic.common.bean.SearchItem;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import cn.hutool.core.codec.Base64;
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
@@ -116,12 +120,14 @@ public class LocalMusicProvider extends CloudMusicProvider {
             String url = StrUtil.format("{}/search-{}-{}-{}.htm", host, encodeKeyword, range, 1);
 
             String listContent = HttpUtil.get(url);
-            List<String> titles = ReUtil.findAll("(<a href=\"thread-\\w+.htm\">.*?</a>)", listContent, 1);
+            Document doc = Jsoup.parse(listContent);
+            Elements as = doc.body().getElementsByTag("a");
 
             List<SearchItem> items = new ArrayList<>();
-            if (CollUtil.isNotEmpty(titles)) {
-                for (String title : titles) {
-                    SearchItem si = parseSearchItem(title);
+            for (Element a : as) {
+                String ref = a.attr("href");
+                if (ref.startsWith("thread-")) {
+                    SearchItem si = parseSearchItem(a);
                     if (si != null) {
                         items.add(si);
                     }
@@ -248,11 +254,11 @@ public class LocalMusicProvider extends CloudMusicProvider {
         return "https://www.hifini.com/" + prefix + key;
     }
 
-    public SearchItem parseSearchItem(String it) {
-        String ref = extractRef(it);
-        String name = extractTitle(it);
+    public SearchItem parseSearchItem(Element a) {
+        String ref = a.attr("href");
+        String name = parseName(a.text());
         if (StrUtil.isBlank(ref) || StrUtil.isBlank(name)) {
-            System.out.println(it);
+            System.out.println(a);
             return null;
         }
         String id = buildStoreId(name);
@@ -287,5 +293,13 @@ public class LocalMusicProvider extends CloudMusicProvider {
             return title;
         }
         return "";
+    }
+    private static String parseName(String name) {
+        int lidx = name.indexOf("[");
+        int ridx = name.lastIndexOf("]");
+        if (lidx == -1 || ridx == -1) {
+            return name;
+        }
+        return name.substring(0, lidx) + name.substring(ridx + 1);
     }
 }

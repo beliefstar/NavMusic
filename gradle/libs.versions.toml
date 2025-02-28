@@ -3,6 +3,7 @@ agp = "8.6.0"
 commonsCodecVersion = "1.16.1"
 fastjson2 = "2.0.35"
 hutoolAll = "5.8.26"
+jsoup = "1.10.2"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
@@ -19,6 +20,7 @@ navigationUi = "2.8.0"
 commons-codec-commons-codec = { module = "commons-codec:commons-codec", version.ref = "commonsCodecVersion" }
 fastjson2 = { module = "com.alibaba.fastjson2:fastjson2", version.ref = "fastjson2" }
 hutool-all = { module = "cn.hutool:hutool-all", version.ref = "hutoolAll" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
