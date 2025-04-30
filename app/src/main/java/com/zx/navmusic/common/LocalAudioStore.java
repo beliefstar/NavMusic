@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
@@ -20,7 +21,7 @@ import cn.hutool.core.io.IoUtil;
 
 public class LocalAudioStore {
 
-    public static Uri find(Activity activity, String name) {
+    public static Uri find(Context ctx, String name) {
         name = name.replace("/", "_");
         Uri collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
 
@@ -29,7 +30,7 @@ public class LocalAudioStore {
                 MediaStore.Audio.Media.DISPLAY_NAME,
                 MediaStore.Audio.Media.SIZE,
         };
-        ContentResolver resolver = activity.getContentResolver();
+        ContentResolver resolver = ctx.getContentResolver();
         String selection = MediaStore.Audio.Media.DISPLAY_NAME + " = ?";
         String[] selectionArgs = new String[] {name};
         try (Cursor cursor = resolver.query(
@@ -59,6 +60,12 @@ public class LocalAudioStore {
     }
 
     public static void put(Activity activity, String name, InputStream in) {
+        put(activity, name, out -> {
+            IoUtil.copy(in, out);
+        });
+    }
+
+    public static void put(Activity activity, String name, Consumer<OutputStream> action) {
         ContentResolver resolver = activity.getContentResolver();
 
         // Find all audio files on the primary external storage device.
@@ -79,10 +86,11 @@ public class LocalAudioStore {
         try (ParcelFileDescriptor pfd =
                      resolver.openFileDescriptor(myFavoriteSongUri, "w", null)) {
             // Write data into the pending audio file.
-            OutputStream out = new FileOutputStream(pfd.getFileDescriptor());
-            IoUtil.copy(in, out);
-
-            out.flush();
+            if (pfd != null) {
+                OutputStream out = new FileOutputStream(pfd.getFileDescriptor());
+                action.accept(out);
+                out.flush();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

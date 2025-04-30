@@ -2,7 +2,6 @@ package com.zx.navmusic.service.impl;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 
 import androidx.fragment.app.FragmentActivity;
 
@@ -16,6 +15,7 @@ import com.zx.navmusic.common.Encryptor;
 import com.zx.navmusic.common.LocalAudioStore;
 import com.zx.navmusic.common.LocalStore;
 import com.zx.navmusic.common.SignatureUtil;
+import com.zx.navmusic.common.bean.ConfigDataBean;
 import com.zx.navmusic.common.bean.MusicItem;
 import com.zx.navmusic.common.bean.SearchItem;
 
@@ -31,9 +31,12 @@ import java.util.concurrent.CompletableFuture;
 
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.io.StreamProgress;
+import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
+import cn.hutool.http.HttpDownloader;
 import cn.hutool.http.HttpGlobalConfig;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
@@ -43,16 +46,16 @@ public class LocalMusicProvider extends CloudMusicProvider {
 
     private boolean useLocalMode = false;
 
-    public String bbsToken = "GTX1ABMONOcFUu_2B2wFVr15JHc23Caub8VdR3pPjFkMCe_2Bb9HwLmPVB9V99nkczUYCExsAEY9GczcJt2LL195QdUzAFZ1Eq3Z";
+    public static final String DEFAULT_BBS_TOKEN = "B913yznE7cUXNjnWjIAJtIAHZdodup7D8iEnJmoP_2F3FUpn0h7FuSidh_2FYVUIUZ4bfjy3TSOnI0xstnhjTbfG9VJN56M_3D";
+    public ConfigDataBean configData;
 
     @Override
     public void refresh(Context ctx) {
-//        AsyncTask.run(() -> {我的天空
-//            List<MusicItem> mis = doFetchList();
-//            postValue(mis);
-//
-//            LocalStore.flush(ctx, mis);
-//        });
+        configData = LocalStore.loadConfigData(ctx);
+
+        if (StrUtil.isBlank(configData.bbsToken)) {
+            setBbsToken(ctx, DEFAULT_BBS_TOKEN);
+        }
 
         List<MusicItem> musicItems = LocalStore.loadMusicData(ctx);
         postValue(musicItems);
@@ -60,6 +63,30 @@ public class LocalMusicProvider extends CloudMusicProvider {
         observeForever(ms -> {
             storeData(ctx);
         });
+
+//        AsyncTask.run(() -> {
+//            List<MusicItem> result = new ArrayList<>();
+//
+//            List<MusicItem> ms = doFetchList();
+//            for (MusicItem m : ms) {
+//                m.cache = true;
+//                Uri uri = LocalAudioStore.find(ctx, m.name);
+//                if (uri != null) {
+//                    result.add(m);
+//                }
+//            }
+//
+//            postValue(result);
+//        });
+    }
+
+    public void setBbsToken(Context ctx, String bbsToken) {
+        configData.bbsToken = bbsToken;
+        LocalStore.flushConfig(ctx, configData);
+    }
+
+    public String getBbsToken() {
+        return configData.bbsToken;
     }
 
     @Override
@@ -176,18 +203,36 @@ public class LocalMusicProvider extends CloudMusicProvider {
     }
 
     private MusicItem doTouchMusic(FragmentActivity activity, MusicItem mi, String url) {
-        HttpGlobalConfig.setMaxRedirectCount(999);
-        try (HttpResponse response = HttpRequest.get(url).timeout(60000)
-                .header("Referer", "https://www.hifini.com/")
-                .setFollowRedirects(true)
-                .setMaxRedirectCount(999)
-                .execute()) {
-            LocalAudioStore.put(activity, mi.name, response.bodyStream());
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.d(App.App_Name, "[CloudMusicProvider]获取失败" + e);
-            return null;
-        }
+        LocalAudioStore.put(activity, mi.name, out -> {
+            HttpGlobalConfig.setMaxRedirectCount(999);
+
+            HttpDownloader.download(url, out, true, new StreamProgress() {
+                @Override
+                public void start() {
+                }
+
+                @Override
+                public void progress(long total, long progressSize) {
+                    String p = NumberUtil.formatPercent(progressSize * 1.0 / total * 100, 2);
+                    if (mi.name.contains("(") && mi.name.endsWith(")")) {
+                        int i = mi.name.lastIndexOf("(");
+                        mi.name = mi.name.substring(0, i);
+                    }
+                    mi.name = mi.name + "(" + p + ")";
+                    postValue(getValue());
+                }
+
+                @Override
+                public void finish() {
+                    if (mi.name.contains("(") && mi.name.endsWith(")")) {
+                        int i = mi.name.lastIndexOf("(");
+                        mi.name = mi.name.substring(0, i);
+                        postValue(getValue());
+                    }
+                }
+            });
+        });
+
         storeData(activity);
 
         if (Boolean.FALSE.equals(mi.cache)) {
@@ -221,7 +266,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
         try {
             String url = "https://www.hifini.com/" + si.thread;
             HttpRequest req = HttpRequest.get(url)
-                    .header("Cookie", "bbs_token=" + bbsToken);
+                    .header("Cookie", "bbs_token=" + getBbsToken());
             String listContent = req.execute().body();
 //            String listContent = HttpUtil.get(url);
             List<String> titles = ReUtil.findAll("music: \\[(.*?)\\]", listContent, 1);

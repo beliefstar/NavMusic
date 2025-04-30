@@ -3,6 +3,7 @@ package com.zx.navmusic.common;
 import android.content.Context;
 
 import com.alibaba.fastjson2.JSON;
+import com.zx.navmusic.common.bean.ConfigDataBean;
 import com.zx.navmusic.common.bean.MusicItem;
 
 import java.io.File;
@@ -17,6 +18,7 @@ import cn.hutool.core.io.IoUtil;
 public class LocalStore {
 
     public static final String DATA_FILE = "repo.data";
+    public static final String CONFIG_FILE = "config.data";
 
     public static void loadFile(Context context) {
         File dataDir = context.getDataDir();
@@ -50,6 +52,35 @@ public class LocalStore {
                 file.createNewFile();
             }
             IoUtil.write(Files.newOutputStream(file.toPath()), true, JSON.toJSONBytes(list));
+        } catch (IOException e) {
+            App.toast("文件写入失败 {}", e.getMessage());
+        }
+    }
+
+    public static ConfigDataBean loadConfigData(Context ctx) {
+        File root = ctx.getDataDir();
+        File file = new File(root, CONFIG_FILE);
+        if (file.exists()) {
+            String content;
+            try (FileInputStream in = new FileInputStream(file)) {
+                content = IoUtil.readUtf8(in.getChannel());
+            } catch (Exception e) {
+                App.toast("文件读取失败 {}", e.getMessage());
+                return new ConfigDataBean();
+            }
+            return JSON.parseObject(content, ConfigDataBean.class);
+        }
+        return new ConfigDataBean();
+    }
+
+    public static void flushConfig(Context ctx, ConfigDataBean configData) {
+        File root = ctx.getDataDir();
+        File file = new File(root, CONFIG_FILE);
+        try {
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            IoUtil.write(Files.newOutputStream(file.toPath()), true, JSON.toJSONBytes(configData));
         } catch (IOException e) {
             App.toast("文件写入失败 {}", e.getMessage());
         }

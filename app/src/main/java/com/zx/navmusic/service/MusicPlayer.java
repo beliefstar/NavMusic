@@ -140,6 +140,12 @@ public class MusicPlayer {
         return -1;
     }
 
+    public void seekTo(int progress) {
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.seekTo(progress);
+        }
+    }
+
     public interface Listener {
         void onCompleted();
         void onReady();

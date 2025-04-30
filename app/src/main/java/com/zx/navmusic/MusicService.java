@@ -40,6 +40,8 @@ public class MusicService extends Service {
     public static final int NOTIFICATION_ID = 6528;
     public static final String CHANNEL_ID = "navmusic_notification_channel";
 
+    public static MusicService INSTANCE;
+
     public static final String ACTION_PLAY = "nav_action_play";
     public static final String ACTION_PLAY_INDEX = "nav_action_play_index";
     public static final String ACTION_PLAY_ID = "nav_action_play_id";
@@ -116,6 +118,8 @@ public class MusicService extends Service {
         NotifyCenter.registerListener(notifyListener);
         initChannel();
         musicProvider.refresh(this);
+
+        INSTANCE = this;
 
         ServiceCompat.startForeground(this, NOTIFICATION_ID, notificationBuilder.build(),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
@@ -275,6 +279,11 @@ public class MusicService extends Service {
         return musicPlayState;
     }
 
+    public int getCurrentSeek() {
+        int seek = musicPlayer.getCurrentSeek();
+        return Math.max(seek, 0);
+    }
+
     private NotificationCompat.Builder initNotificationBuilder() {
         Icon largeIcon = IconCompat.createWithResource(getApplicationContext(), R.drawable.ic_empty_music2).toIcon(getApplicationContext());
         return new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -354,6 +363,10 @@ public class MusicService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    public void seekTo(int progress) {
+        musicPlayer.seekTo(progress);
     }
 
     public interface PlaySwitchStrategy {

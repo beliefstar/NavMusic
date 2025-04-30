@@ -4,12 +4,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -29,6 +32,7 @@ import com.zx.navmusic.ui.UIFragment;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -39,6 +43,24 @@ public class HomeFragment extends Fragment implements NotifyListener {
 
     private FragmentHomeBinding binding;
     private TextView tvPlayMusicName;
+    private Handler handler = new Handler(Looper.getMainLooper());
+
+
+    // 更新SeekBar进度
+    private Runnable updateSeekBar = new Runnable() {
+        @Override
+        public void run() {
+            if (MusicService.INSTANCE != null) {
+                int seek = MusicService.INSTANCE.getCurrentSeek();
+                binding.playSeekBar.setProgress(seek);
+
+                binding.tvPlayCurrentSeek.setText(formatTime(seek));
+
+                // 每100毫秒更新一次
+                handler.postDelayed(this, 100);
+            }
+        }
+    };
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -69,6 +91,27 @@ public class HomeFragment extends Fragment implements NotifyListener {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        // SeekBar变化监听
+        binding.playSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    MusicService.INSTANCE.seekTo(progress);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                // 用户开始拖动时暂停更新
+                handler.removeCallbacks(updateSeekBar);
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                // 用户停止拖动后恢复更新
+                updateSeekBar();
             }
         });
 
@@ -133,6 +176,10 @@ public class HomeFragment extends Fragment implements NotifyListener {
         Drawable drawable = ResourcesCompat.getDrawable(getResources(), icResId, getContext().getTheme());
         binding.btnPlay.setBackground(drawable);
         binding.spPlayMode.setSelection(playState.playSwitchStrategy);
+        binding.playSeekBar.setMax(playState.duration);
+        binding.tvPlayDuration.setText(formatTime(playState.duration));
+
+        updateSeekBar();
     }
 
 
@@ -181,64 +228,21 @@ public class HomeFragment extends Fragment implements NotifyListener {
     }
 
 
-//    private void handleInput(View view) {
-//        String input = binding.mInput.getText().toString();
-//        binding.mTv.setText("input: " + input);
-//
-//        if (!PermissionUtils.checkFilePermission(getActivity())) {
-//            PermissionUtils.requireFilePermission(getActivity());
-//            return;
-//        }
-//
-//        if (!ROOT.exists()) {
-//            ROOT.mkdirs();
-//        }
-//        File dir = ROOT;
-//        File file = new File(dir, "aaa.txt");
-//        Log.d(getString(R.string.app_name), file.getAbsolutePath());
-//        Log.d(getString(R.string.app_name), "dir: %s, file: %s".formatted(dir.exists(), file.exists()));
-//
-//        try {
-//            file.createNewFile();
-//            OutputStream out = Files.newOutputStream(file.toPath());
-//            IOUtils.copy(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)), out);
-//
-//            out.flush();
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-//    private void handleRead(View view) {
-//        if (!PermissionUtils.checkFilePermission(getActivity())) {
-//            PermissionUtils.requireFilePermission(getActivity());
-//            return;
-//        }
-//        if (!ROOT.exists()) {
-//            ROOT.mkdirs();
-//        }
-//        File dir = ROOT;
-//        File file = new File(dir, "aaa.txt");
-//        Log.d(getString(R.string.app_name), file.getAbsolutePath());
-//
-//        String readStr;
-//        try {
-//            InputStream in = Files.newInputStream(file.toPath());
-//            ByteArrayOutputStream out = new ByteArrayOutputStream();
-//            IOUtils.copy(in, out);
-//
-//            readStr = new String(out.toByteArray(), StandardCharsets.UTF_8);
-//            in.close();
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//        binding.mReadTv.setText("read: " + readStr);
-//    }
+    private void updateSeekBar() {
+        handler.post(updateSeekBar);
+    }
+
+    private String formatTime(int milliseconds) {
+        int seconds = (milliseconds / 1000) % 60;
+        int minutes = (milliseconds / (1000 * 60)) % 60;
+        return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
+    }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         NotifyCenter.unregisterListener(this);
+        handler.removeCallbacks(updateSeekBar);
         binding = null;
     }
 

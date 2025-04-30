@@ -72,6 +72,37 @@
             android:layout_gravity="bottom"
             />
     </LinearLayout>
+
+    <SeekBar
+        android:id="@+id/playSeekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10sp"
+        android:theme="@style/Theme.NavMusic" />
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="15sp"
+        android:layout_marginBottom="10sp">
+        <TextView
+            android:id="@+id/tv_play_current_seek"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:paddingStart="15sp"
+            android:textSize="12sp"/>
+
+        <TextView
+            android:id="@+id/tv_play_duration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:textSize="12sp"
+            android:paddingEnd="15sp"/>
+    </RelativeLayout>
+
     <ListView
         android:id="@+id/lv_list"
         android:layout_width="match_parent"
