@@ -106,23 +106,27 @@ public class LocalMusicProvider extends CloudMusicProvider {
 
         final MusicItem dirty = i;
         return AsyncTask.supply(() -> {
-            String url = queryTouchUrl(si);
-            if (StrUtil.isBlank(url)) {
-                App.toast("无法获取该歌曲资源");
-                return null;
-            }
-
             if (!initializing.add(si.id)) {
                 return null;
             }
+            String name = si.name;
+            si.name = StrUtil.format("{}(正在获取资源)", si.name);
             MusicItem mi = dirty == null ? addItem(si) : dirty;
-            mi.cache = false;
+            si.name = name;
+            try {
+                String url = queryTouchUrl(si);
+                if (StrUtil.isBlank(url)) {
+                    App.toast("无法获取该歌曲资源");
+                    return null;
+                }
 
-            MusicItem r = doTouchMusic(activity, mi, url);
-            if (r != null) {
+                mi.name = name;
+                mi.cache = !useLocalMode;
+
+                return doTouchMusic(activity, mi, url);
+            } finally {
                 initializing.remove(si.id);
             }
-            return r;
         });
     }
 
@@ -213,7 +217,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
 
                 @Override
                 public void progress(long total, long progressSize) {
-                    String p = NumberUtil.formatPercent(progressSize * 1.0 / total * 100, 2);
+                    String p = NumberUtil.formatPercent(progressSize * 1.0 / total, 2);
                     if (mi.name.contains("(") && mi.name.endsWith(")")) {
                         int i = mi.name.lastIndexOf("(");
                         mi.name = mi.name.substring(0, i);
@@ -262,6 +266,9 @@ public class LocalMusicProvider extends CloudMusicProvider {
     private String queryTouchUrl(SearchItem si) {
         if (Boolean.TRUE.equals(si.cache)) {
             return super.getItemRemoteUrl(si.id);
+        }
+        if (!useLocalMode) {
+            return getDownloadUrl(si);
         }
         try {
             String url = "https://www.hifini.com/" + si.thread;

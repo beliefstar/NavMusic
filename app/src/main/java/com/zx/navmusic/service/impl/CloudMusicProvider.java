@@ -197,6 +197,35 @@ public class CloudMusicProvider extends MusicLiveProvider {
         return si.name + ".mp3";
     }
 
+
+    protected String getDownloadUrl(SearchItem si) {
+        String name = si.name;
+        if (name.endsWith(".mp3")) {
+            name = name.substring(0, name.length() - 4);
+        }
+        String url = StrUtil.format("{}?thread={}&name={}", HOST + API_SEARCH_TOUCH, si.thread, name);
+
+        String id = null;
+        try {
+            id = executeHttp(HttpRequest.get(url), body -> body, null);
+        } catch (Exception e) {
+            Log.d(App.App_Name, "[CloudMusicProvider]获取失败" + e);
+        }
+
+        if (StrUtil.isBlank(id)) {
+            return null;
+        }
+        switch (id) {
+            case SERVICE_ERROR:
+            case SERVICE_BUSY:
+            case SERVICE_TIMEOUT:
+                App.toast("服务繁忙，请稍后再试");
+                return null;
+        }
+
+        return getItemRemoteUrl(id);
+    }
+
     private MusicItem doTouchMusic(FragmentActivity activity, SearchItem si) {
         String url = StrUtil.format("{}?thread={}&name={}", HOST + API_SEARCH_TOUCH, si.thread, si.name);
 
