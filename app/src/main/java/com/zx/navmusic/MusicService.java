@@ -21,6 +21,7 @@ import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.Observer;
 
 import com.zx.navmusic.common.App;
+import com.zx.navmusic.common.Util;
 import com.zx.navmusic.common.bean.MusicItem;
 import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.event.NotifyListener;
@@ -271,6 +272,7 @@ public class MusicService extends Service {
         MusicItem item = musicProvider.getItem(playSwitchStrategy.getCursIndex());
         if (item != null) {
             musicPlayState.name = item.name;
+            Util.parsePlayState(musicPlayState);
         }
         if (musicPlayer.isReady()) {
             musicPlayState.duration = musicPlayer.getCurrentDuration();
@@ -340,7 +342,7 @@ public class MusicService extends Service {
 
     private void updateMediaSession(MusicPlayState musicPlayState) {
         mediaSession.setMetadata(new MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, "")
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, musicPlayState.artist)
 //                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, getAlbumArtistName())
                 .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, "")
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, musicPlayState.name)

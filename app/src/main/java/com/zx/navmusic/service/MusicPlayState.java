@@ -4,6 +4,8 @@ public class MusicPlayState {
 
     public String name;
 
+    public String artist;
+
     public boolean isPlaying;
 
     public int playSwitchStrategy;
@@ -16,6 +18,7 @@ public class MusicPlayState {
 
     public void reset() {
         name = "";
+        artist = "";
         isPlaying = false;
         playSwitchStrategy = 0;
         duration = 0;
