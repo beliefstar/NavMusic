@@ -39,7 +39,12 @@ public abstract class MusicLiveProvider extends LiveData<List<MusicItem>> implem
     }
 
     @Override
-    public void refresh(Context ctx) {
+    public void init(Context ctx) {
+    }
+
+    @Override
+    public void refresh() {
+        postValue(getValue());
     }
 
     @Override

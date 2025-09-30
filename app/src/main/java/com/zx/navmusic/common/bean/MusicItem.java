@@ -1,5 +1,7 @@
 package com.zx.navmusic.common.bean;
 
+import androidx.annotation.NonNull;
+
 public class MusicItem {
 
     public String id;
@@ -7,6 +9,8 @@ public class MusicItem {
     public String name;
 
     public Boolean cache;
+
+    public Integer score = 0;
 
     public MusicItem() {
     }
@@ -20,5 +24,16 @@ public class MusicItem {
         this.id = id;
         this.name = name;
         this.cache = cache;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "MusicItem{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", cache=" + cache +
+                ", score=" + score +
+                '}';
     }
 }

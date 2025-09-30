@@ -2,6 +2,8 @@ package com.zx.navmusic.service.impl;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.fragment.app.FragmentActivity;
 
@@ -24,10 +26,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.io.IoUtil;
@@ -36,6 +40,7 @@ import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
+import cn.hutool.crypto.digest.MD5;
 import cn.hutool.http.HttpDownloader;
 import cn.hutool.http.HttpGlobalConfig;
 import cn.hutool.http.HttpRequest;
@@ -49,8 +54,24 @@ public class LocalMusicProvider extends CloudMusicProvider {
     public static final String DEFAULT_BBS_TOKEN = "B913yznE7cUXNjnWjIAJtIAHZdodup7D8iEnJmoP_2F3FUpn0h7FuSidh_2FYVUIUZ4bfjy3TSOnI0xstnhjTbfG9VJN56M_3D";
     public ConfigDataBean configData;
 
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    private final Runnable storeTask = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                App.log("定时保存数据");
+                storeData(App.MainActivity);
+            } finally {
+                mainHandler.postDelayed(this, TimeUnit.MINUTES.toMillis(1));
+            }
+        }
+    };
+
+    private String lastStoreVersion = null;
+
     @Override
-    public void refresh(Context ctx) {
+    public void init(Context ctx) {
         configData = LocalStore.loadConfigData(ctx);
 
         if (StrUtil.isBlank(configData.bbsToken)) {
@@ -63,6 +84,8 @@ public class LocalMusicProvider extends CloudMusicProvider {
         observeForever(ms -> {
             storeData(ctx);
         });
+
+        mainHandler.postDelayed(storeTask, TimeUnit.MINUTES.toMillis(1));
 
 //        AsyncTask.run(() -> {
 //            List<MusicItem> result = new ArrayList<>();
@@ -189,8 +212,21 @@ public class LocalMusicProvider extends CloudMusicProvider {
     private void storeData(Context ctx) {
         List<MusicItem> value = getValue();
         if (value != null) {
+            String version = buildStoreVersion(value);
+            if (StrUtil.equals(version, lastStoreVersion)) {
+                return;
+            }
+            lastStoreVersion = version;
             LocalStore.flush(ctx, value);
         }
+    }
+
+    private String buildStoreVersion(List<MusicItem> items) {
+        if (items == null || items.isEmpty()) {
+            return "0";
+        }
+        String s = JSON.toJSONString(items);
+        return MD5.create().digestHex(s, StandardCharsets.UTF_8);
     }
 
     private MusicItem queryByName(String name) {

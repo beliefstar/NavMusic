@@ -21,7 +21,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -32,17 +31,17 @@ import com.zx.navmusic.common.Util;
 import com.zx.navmusic.databinding.FragmentHomeBinding;
 import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.event.NotifyListener;
+import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.MusicPlayState;
 import com.zx.navmusic.ui.UIFragment;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 
 public class HomeFragment extends Fragment implements NotifyListener {
-
-    public static final String divider = " - ";
 
     private FragmentHomeBinding binding;
     private TextView tvPlayMusicName;
@@ -51,9 +50,6 @@ public class HomeFragment extends Fragment implements NotifyListener {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        HomeViewModel homeViewModel =
-                new ViewModelProvider(this).get(HomeViewModel.class);
-
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
         UIFragment.initView(getContext(), root);
@@ -64,7 +60,12 @@ public class HomeFragment extends Fragment implements NotifyListener {
 
         MusicListAdapter adapter = new MusicListAdapter(getActivity(), R.layout.music_list_item);
 
-        homeViewModel.getList().observe(getViewLifecycleOwner(), adapter::onChange);
+        MusicLiveProvider.getInstance().observeForever(list -> {
+            if (CollUtil.isEmpty(list)) {
+                return;
+            }
+            adapter.onChange(list);
+        });
 
         binding.lvList.setAdapter(adapter);
         binding.tvPlayMusicName.setOnClickListener(v -> {

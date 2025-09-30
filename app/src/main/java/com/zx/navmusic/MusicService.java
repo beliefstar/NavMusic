@@ -129,7 +129,7 @@ public class MusicService extends Service {
 
         MusicLiveProvider musicProvider = getMusicProvider();
         musicProvider.observeForever(initer);
-        musicProvider.refresh(this);
+        musicProvider.init(this);
 
         INSTANCE = this;
 
@@ -181,7 +181,7 @@ public class MusicService extends Service {
                 previous();
                 break;
             case ACTION_PLAY_MODE:
-                int type = intent.getIntExtra(ACTION_PLAY_MODE, 0);
+                int type = intent.getIntExtra(ACTION_PLAY_MODE, PlayModeStrategy.RANDOM);
                 setPlayModeStrategy(type);
                 break;
             case ACTION_PLAY_PAUSE:
@@ -273,6 +273,7 @@ public class MusicService extends Service {
         int index = playModeStrategy.next();
         MusicItem item = getMusicProvider().getItem(index);
         if (item != null) {
+            beforeMusicChange(item);
             musicPlayer.load(item);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
         }
@@ -282,6 +283,7 @@ public class MusicService extends Service {
         int index = playModeStrategy.previous();
         MusicItem item = getMusicProvider().getItem(index);
         if (item != null) {
+            beforeMusicChange(item);
             musicPlayer.load(item);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
         }
@@ -412,5 +414,36 @@ public class MusicService extends Service {
         unregisterReceiver(intentReceiver);
         musicPlayer.destroy();
         mediaSession.release();
+    }
+
+    public void beforeMusicChange(MusicItem in) {
+        try {
+            MusicPlayState musicPlayState = NotifyCenter.getMusicPlayState();
+            if (musicPlayState == null || musicPlayState.index < 0 || !musicPlayer.isReady()) {
+                return;
+            }
+            int duration = musicPlayer.getCurrentDuration();
+            int seek = musicPlayer.getCurrentSeek();
+            MusicItem out = getMusicProvider().getItem(musicPlayState.index);
+            if (out == null) {
+                return;
+            }
+            onMusicChange(out, in, seek, duration);
+        } catch (Exception e) {
+            App.log("beforeMusicChange-error {}", e.getMessage());
+        }
+    }
+
+    public void onMusicChange(MusicItem out, MusicItem in, int seek, int duration) {
+        // 切换音乐时调用
+        double percent = (duration > 0) ? (double) seek / duration : 0;
+        if (percent < 0.95) {
+            // 不是手动切换，并且没有播放完，记录上次播放进度
+            out.score -= 5;
+        } else {
+            out.score += 1;
+        }
+        App.log("onMusicChange out:{}, score:{}", out.name, out.score);
+        MusicLiveProvider.getInstance().refresh();
     }
 }

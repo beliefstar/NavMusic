@@ -27,7 +27,7 @@ public class MusicListAdapter extends BaseAdapter {
     private final LayoutInflater mInflater;
     private final Activity mContext;
     private final int mResource;
-    private List<String> mObjects;
+    private List<MusicItem> mObjects;
 
     public MusicListAdapter(Activity context, int resource) {
         mContext = context;
@@ -56,7 +56,7 @@ public class MusicListAdapter extends BaseAdapter {
         return createViewFromResource(mInflater, position, convertView, parent, mResource);
     }
 
-    public void onChange(List<String> lst) {
+    public void onChange(List<MusicItem> lst) {
         if (lst == null) {
             return;
         }
@@ -110,9 +110,12 @@ public class MusicListAdapter extends BaseAdapter {
         });
 
         try {
+            MusicItem item = (MusicItem) getItem(position);
             TextView text = view.findViewById(R.id.tv_mli);
-            text.setText(getItem(position).toString());
+            text.setText(item.name);
 
+            TextView textScore = view.findViewById(R.id.tv_mli_score);
+            textScore.setText(String.valueOf(item.score));
         } catch (ClassCastException e) {
             Log.e("MusicListAdapter", "You must supply a resource ID for a TextView");
             throw new IllegalStateException(

@@ -12,7 +12,9 @@ import java.util.concurrent.CompletableFuture;
 
 public interface MusicProvider {
 
-    void refresh(Context ctx);
+    void init(Context ctx);
+
+    void refresh();
 
     List<MusicItem> getList();
 

@@ -144,7 +144,7 @@ public class CloudMusicProvider extends MusicLiveProvider {
     }
 
     @Override
-    public void refresh(Context ctx) {
+    public void init(Context ctx) {
         doRefresh();
     }
 
