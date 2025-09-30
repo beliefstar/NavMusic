@@ -16,9 +16,12 @@ import cn.hutool.core.collection.CollUtil;
 
 public abstract class MusicLiveProvider extends LiveData<List<MusicItem>> implements MusicProvider {
 
-    private static final MusicLiveProvider instance = new LocalMusicProvider();
+    private static volatile MusicLiveProvider instance;
 
-    public static MusicLiveProvider getInstance() {
+    public synchronized static MusicLiveProvider getInstance() {
+        if (instance == null) {
+            instance = new LocalMusicProvider();
+        }
         return instance;
     }
 

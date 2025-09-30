@@ -26,15 +26,15 @@ public class MusicPlayer {
     }
 
     public void play() {
-        App.log("player-play");
         if (playerReady) {
-            App.log("player-start");
+            App.log("player-play");
             mediaPlayer.start();
         }
     }
 
     public void pause() {
         if (playerReady) {
+            App.log("player-pause");
             mediaPlayer.pause();
         }
     }
@@ -143,6 +143,12 @@ public class MusicPlayer {
     public void seekTo(int progress) {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.seekTo(progress);
+        }
+    }
+
+    public void destroy() {
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
         }
     }
 

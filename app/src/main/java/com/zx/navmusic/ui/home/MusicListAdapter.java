@@ -1,6 +1,6 @@
 package com.zx.navmusic.ui.home;
 
-import android.content.Context;
+import android.app.Activity;
 import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,24 +13,26 @@ import androidx.appcompat.app.AlertDialog;
 
 import com.zx.navmusic.MusicService;
 import com.zx.navmusic.R;
+import com.zx.navmusic.common.Util;
 import com.zx.navmusic.common.bean.MusicItem;
 import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.service.MusicLiveProvider;
+import com.zx.navmusic.service.MusicPlayState;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MusicListAdapter extends BaseAdapter {
 
     private final LayoutInflater mInflater;
-    private final Context mContext;
+    private final Activity mContext;
     private final int mResource;
     private List<String> mObjects;
 
-    public MusicListAdapter(Context context, int resource,
-                            List<String> objects) {
+    public MusicListAdapter(Activity context, int resource) {
         mContext = context;
         mResource = resource;
-        mObjects = objects;
+        mObjects = new ArrayList<>();
         mInflater = LayoutInflater.from(context);
     }
 
@@ -52,6 +54,14 @@ public class MusicListAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         return createViewFromResource(mInflater, position, convertView, parent, mResource);
+    }
+
+    public void onChange(List<String> lst) {
+        if (lst == null) {
+            return;
+        }
+        mObjects = lst;
+        notifyDataSetChanged();
     }
 
     private View createViewFromResource(LayoutInflater inflater, int position,
@@ -77,7 +87,8 @@ public class MusicListAdapter extends BaseAdapter {
                     .setTitle("删除")
                     .setMessage(item.name)
                     .setPositiveButton("删除", (dialog, which) -> {
-                        if (NotifyCenter.getMusicPlayState().index == mPosition) {
+                        MusicPlayState musicPlayState = NotifyCenter.getMusicPlayState();
+                        if (musicPlayState != null && musicPlayState.index == mPosition) {
                             Intent intent = new Intent(mContext, MusicService.class);
                             intent.setAction(MusicService.ACTION_NEXT);
                             mContext.startForegroundService(intent);
@@ -94,6 +105,8 @@ public class MusicListAdapter extends BaseAdapter {
             intent.setAction(MusicService.ACTION_PLAY);
             intent.putExtra(MusicService.ACTION_PLAY_INDEX, (int) v.getTag());
             mContext.startForegroundService(intent);
+
+            Util.navigatePlaying(mContext);
         });
 
         try {

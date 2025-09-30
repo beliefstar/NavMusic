@@ -26,14 +26,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NavMusic"
         android:usesCleartextTraffic="true">
+        <activity
+            android:name=".PlaybackActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:exported="false" />
+
         <service
             android:name=".MusicService"
             android:enabled="true"
-            android:foregroundServiceType="mediaPlayback"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -42,15 +48,17 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".MediaReceiver"
+        <receiver
+            android:name=".MediaReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.zx.navmusic.MediaReceiver.ACTION_PLAY_PAUSE"/>
-                <action android:name="com.zx.navmusic.MediaReceiver.ACTION_PREV"/>
-                <action android:name="com.zx.navmusic.MediaReceiver.ACTION_NEXT"/>
-                <action android:name="android.bluetooth.device.action.ACL_CONNECTED"/>
-                <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED"/>
-                <action android:name="android.media.AUDIO_BECOMING_NOISY"/>
+                <action android:name="com.zx.navmusic.MediaReceiver.ACTION_PLAY_PAUSE" />
+                <action android:name="com.zx.navmusic.MediaReceiver.ACTION_PREV" />
+                <action android:name="com.zx.navmusic.MediaReceiver.ACTION_NEXT" />
+                <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
+                <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
             </intent-filter>
         </receiver>
     </application>

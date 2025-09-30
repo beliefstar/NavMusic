@@ -1,5 +1,13 @@
 package com.zx.navmusic.common;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.util.TypedValue;
+
+import com.zx.navmusic.MainActivity;
+import com.zx.navmusic.PlaybackActivity;
+import com.zx.navmusic.R;
 import com.zx.navmusic.service.MusicPlayState;
 
 public class Util {
@@ -33,5 +41,29 @@ public class Util {
                 t.artist = artist;
             }
         }
+    }
+
+
+    public static Intent intentPlaying(Context ctx) {
+        return new Intent(ctx, PlaybackActivity.class);
+    }
+
+    public static void navigatePlaying(Activity ctx) {
+        ctx.startActivity(new Intent(ctx, PlaybackActivity.class));
+        ctx.overridePendingTransition(R.anim.slide_in_bottom, 0);
+    }
+
+    public static void navigateMain(Context ctx) {
+        Intent intent = new Intent(ctx, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        ctx.startActivity(intent);
+    }
+
+    public static int convertSpToPx(Context context, float sp) {
+        return (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_SP,
+                sp,
+                context.getResources().getDisplayMetrics()
+        );
     }
 }

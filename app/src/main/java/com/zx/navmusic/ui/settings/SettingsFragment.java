@@ -1,5 +1,6 @@
-package com.zx.navmusic.ui.notifications;
+package com.zx.navmusic.ui.settings;
 
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
 import android.text.Editable;
@@ -12,22 +13,23 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.zx.navmusic.databinding.FragmentNotificationsBinding;
+import com.zx.navmusic.PlaybackActivity;
+import com.zx.navmusic.databinding.FragmentSettingsBinding;
 import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.impl.CloudMusicProvider;
 import com.zx.navmusic.service.impl.LocalMusicProvider;
 import com.zx.navmusic.ui.UIFragment;
 
-public class NotificationsFragment extends Fragment {
+public class SettingsFragment extends Fragment {
 
-    private FragmentNotificationsBinding binding;
+    private FragmentSettingsBinding binding;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        NotificationsViewModel notificationsViewModel =
-                new ViewModelProvider(this).get(NotificationsViewModel.class);
+        SettingsViewModel settingsViewModel =
+                new ViewModelProvider(this).get(SettingsViewModel.class);
 
-        binding = FragmentNotificationsBinding.inflate(inflater, container, false);
+        binding = FragmentSettingsBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
         UIFragment.initView(getContext(), root);
 
@@ -104,6 +106,13 @@ public class NotificationsFragment extends Fragment {
             if (instance instanceof CloudMusicProvider) {
                 CloudMusicProvider provider = (CloudMusicProvider) instance;
                 provider.unlock();
+            }
+        });
+
+        binding.btnJump.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getActivity(), PlaybackActivity.class));
             }
         });
         return root;

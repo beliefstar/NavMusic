@@ -1,13 +1,22 @@
 package com.zx.navmusic;
 
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SEEK_TO;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_NEXT;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.graphics.drawable.Icon;
+import android.media.AudioManager;
 import android.os.IBinder;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -28,13 +37,11 @@ import com.zx.navmusic.event.NotifyListener;
 import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.MusicPlayState;
 import com.zx.navmusic.service.MusicPlayer;
+import com.zx.navmusic.service.strategy.PlayModeFactory;
+import com.zx.navmusic.service.strategy.PlayModeStrategy;
 
-import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
 
-import cn.hutool.core.collection.ConcurrentHashSet;
 import cn.hutool.core.util.StrUtil;
 
 public class MusicService extends Service {
@@ -52,16 +59,18 @@ public class MusicService extends Service {
     public static final String ACTION_PREVIOUS = "nav_action_previous";
     public static final String ACTION_PLAY_MODE = "nav_action_play_mode";
 
-    public final LinearPlayStrategy linearPlayStrategy = new LinearPlayStrategy();
-    public final RandomPlayStrategy randomPlayStrategy = new RandomPlayStrategy();
-    public final SingleLoopPlayStrategy singleLoopPlayStrategy = new SingleLoopPlayStrategy();
+    private final BroadcastReceiver intentReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            handleAction(intent);
+        }
+    };
 
     private MediaSessionCompat mediaSession;
     private NotificationCompat.Builder notificationBuilder;
     private NotificationManagerCompat notificationManager;
     private MusicPlayer musicPlayer;
-    private MusicLiveProvider musicProvider;
-    private PlaySwitchStrategy playSwitchStrategy;
+    private PlayModeStrategy playModeStrategy;
     private MusicPlayState musicPlayState;
     private boolean init = false;
     private boolean autoPlay = false;
@@ -79,7 +88,8 @@ public class MusicService extends Service {
             return;
         }
         if (!init && !musicItems.isEmpty()) {
-            musicPlayer.load(musicItems.get(0));
+            int curPos = playModeStrategy.getCurPos();
+            musicPlayer.load(musicItems.get(curPos));
         }
         init = true;
     };
@@ -110,17 +120,29 @@ public class MusicService extends Service {
         mediaSession = initMediaSession();
         notificationBuilder = initNotificationBuilder();
         musicPlayer = new MusicPlayer();
-        musicProvider = MusicLiveProvider.getInstance();
-        playSwitchStrategy = randomPlayStrategy;
+        playModeStrategy = PlayModeFactory.get(PlayModeStrategy.RANDOM);
         musicPlayState = new MusicPlayState();
 
         musicPlayer.setListener(playerListener);
-        musicProvider.observeForever(initer);
         NotifyCenter.registerListener(notifyListener);
         initChannel();
+
+        MusicLiveProvider musicProvider = getMusicProvider();
+        musicProvider.observeForever(initer);
         musicProvider.refresh(this);
 
         INSTANCE = this;
+
+        // 注册广播事件
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ACTION_PLAY);
+        intentFilter.addAction(ACTION_PAUSE);
+        intentFilter.addAction(ACTION_NEXT);
+        intentFilter.addAction(ACTION_PREVIOUS);
+        intentFilter.addAction(ACTION_PLAY_MODE);
+        intentFilter.addAction(ACTION_PLAY_PAUSE);
+        intentFilter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        registerReceiver(intentReceiver, intentFilter, Context.RECEIVER_EXPORTED);
 
         ServiceCompat.startForeground(this, NOTIFICATION_ID, notificationBuilder.build(),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
@@ -129,6 +151,8 @@ public class MusicService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         App.log("[MusicService] - onStartCommand - {}", intent.getAction());
+        startForeground(NOTIFICATION_ID, notificationBuilder.build());
+
         handleAction(intent);
         updateNotification();
         return START_NOT_STICKY;
@@ -142,6 +166,7 @@ public class MusicService extends Service {
         if (StrUtil.isBlank(action)) {
             return;
         }
+        App.log("[MusicService] - handleAction - {}", action);
         switch (action) {
             case ACTION_PLAY:
                 handlePlayAction(intent);
@@ -157,13 +182,18 @@ public class MusicService extends Service {
                 break;
             case ACTION_PLAY_MODE:
                 int type = intent.getIntExtra(ACTION_PLAY_MODE, 0);
-                setPlaySwitchStrategy(type);
+                setPlayModeStrategy(type);
                 break;
             case ACTION_PLAY_PAUSE:
                 if (musicPlayer.isPlaying()) {
                     pause();
                 } else {
                     play();
+                }
+                break;
+            case AudioManager.ACTION_AUDIO_BECOMING_NOISY:
+                if (musicPlayer.isPlaying()) {
+                    pause();
                 }
         }
     }
@@ -176,32 +206,28 @@ public class MusicService extends Service {
         }
         String playId = intent.getStringExtra(ACTION_PLAY_ID);
         if (StrUtil.isNotBlank(playId)) {
-            index = musicProvider.getIndexById(playId);
+            index = getMusicProvider().getIndexById(playId);
             play(index);
             return;
         }
         play();
     }
 
-    private void setPlaySwitchStrategy(int switchStrategyType) {
-        int cursIndex = playSwitchStrategy.getCursIndex();
-        switch (switchStrategyType) {
-            case PlaySwitchStrategy.LINEAR:
-                playSwitchStrategy = linearPlayStrategy;
-                break;
-            case PlaySwitchStrategy.RANDOM:
-                playSwitchStrategy = randomPlayStrategy;
-                break;
-            case PlaySwitchStrategy.LOOP:
-                playSwitchStrategy = singleLoopPlayStrategy;
-                break;
+    private MusicLiveProvider getMusicProvider() {
+        return MusicLiveProvider.getInstance();
+    }
+
+    private void setPlayModeStrategy(int switchStrategyType) {
+        if (switchStrategyType == playModeStrategy.getType()) {
+            return;
         }
-        playSwitchStrategy.setCursIndex(cursIndex);
+        int curPos = playModeStrategy.getCurPos();
+        playModeStrategy = PlayModeFactory.get(switchStrategyType);
+        playModeStrategy.resetPos(curPos);
+        NotifyCenter.onMusicStateChange(buildMusicPlayState());
     }
 
     private void updateNotification() {
-//        ServiceCompat.startForeground(this, NOTIFICATION_ID, notificationBuilder.build(),
-//                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
@@ -216,11 +242,11 @@ public class MusicService extends Service {
     }
 
     private void play(int index) {
-        MusicItem item = musicProvider.getItem(index);
+        MusicItem item = getMusicProvider().getItem(index);
         if (item != null) {
             autoPlay = true;
             musicPlayer.load(item);
-            playSwitchStrategy.setCursIndex(index);
+            playModeStrategy.resetPos(index);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
         }
     }
@@ -244,21 +270,19 @@ public class MusicService extends Service {
     }
 
     private void next() {
-        int index = playSwitchStrategy.next();
-        MusicItem item = musicProvider.getItem(index);
+        int index = playModeStrategy.next();
+        MusicItem item = getMusicProvider().getItem(index);
         if (item != null) {
             musicPlayer.load(item);
-            playSwitchStrategy.setCursIndex(index);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
         }
     }
 
     private void previous() {
-        int index = playSwitchStrategy.previous();
-        MusicItem item = musicProvider.getItem(index);
+        int index = playModeStrategy.previous();
+        MusicItem item = getMusicProvider().getItem(index);
         if (item != null) {
             musicPlayer.load(item);
-            playSwitchStrategy.setCursIndex(index);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
         }
     }
@@ -267,9 +291,9 @@ public class MusicService extends Service {
         musicPlayState.reset();
 
         musicPlayState.isPlaying = musicPlayer.isPlaying();
-        musicPlayState.playSwitchStrategy = playSwitchStrategy.getType();
-        musicPlayState.index = playSwitchStrategy.getCursIndex();
-        MusicItem item = musicProvider.getItem(playSwitchStrategy.getCursIndex());
+        musicPlayState.playSwitchStrategy = playModeStrategy.getType();
+        musicPlayState.index = playModeStrategy.getCurPos();
+        MusicItem item = getMusicProvider().getItem(playModeStrategy.getCurPos());
         if (item != null) {
             musicPlayState.name = item.name;
             Util.parsePlayState(musicPlayState);
@@ -286,15 +310,22 @@ public class MusicService extends Service {
         return Math.max(seek, 0);
     }
 
+    public MusicItem getNextInfo() {
+        int idx = playModeStrategy.peekNext();
+        return getMusicProvider().getItem(idx);
+    }
+
     private NotificationCompat.Builder initNotificationBuilder() {
         Icon largeIcon = IconCompat.createWithResource(getApplicationContext(), R.drawable.ic_empty_music2).toIcon(getApplicationContext());
+
+        PendingIntent clickIntent = PendingIntent.getActivity(this, 0, Util.intentPlaying(this), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("NavMusic")
                 .setContentText("")
-//                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(R.drawable.ic_settings)
                 .setLargeIcon(largeIcon)
-//                .setContentIntent()
+                .setContentIntent(clickIntent)
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken()))
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -333,6 +364,11 @@ public class MusicService extends Service {
                 // 处理上一曲
                 previous();
             }
+
+            @Override
+            public void onSeekTo(long pos) {
+                seekTo((int)pos);
+            }
         });
 
         // 激活 MediaSession
@@ -358,7 +394,7 @@ public class MusicService extends Service {
         mediaSession.setPlaybackState(new PlaybackStateCompat.Builder()
                 .setState(state, musicPlayState.position, 1.0f)
                 .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY_PAUSE |
-                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
+                        ACTION_SKIP_TO_NEXT | ACTION_SKIP_TO_PREVIOUS | ACTION_SEEK_TO)
                 .build());
     }
 
@@ -371,116 +407,10 @@ public class MusicService extends Service {
         musicPlayer.seekTo(progress);
     }
 
-    public interface PlaySwitchStrategy {
-        int LINEAR = 0;
-        int RANDOM = 1;
-        int LOOP = 2;
-        int getType();
-        int getCursIndex();
-        void setCursIndex(int cursPosition);
-        int previous();
-        int next();
-    }
-
-    private static abstract class AbsPlaySwitchStrategy implements PlaySwitchStrategy {
-        protected int position;
-        @Override
-        public int getCursIndex() {
-            return position;
-        }
-
-        @Override
-        public void setCursIndex(int cursPosition) {
-            position = cursPosition;
-        }
-    }
-
-    public class LinearPlayStrategy extends AbsPlaySwitchStrategy {
-        @Override
-        public int getType() {
-            return LINEAR;
-        }
-
-        @Override
-        public int previous() {
-            return Math.max(position - 1, 0);
-        }
-
-        @Override
-        public int next() {
-            return (position + 1) % musicProvider.count();
-        }
-    }
-
-    public class RandomPlayStrategy extends AbsPlaySwitchStrategy {
-        private final ArrayDeque<Integer> playedQueue = new ArrayDeque<>();
-        private final Set<Integer> set = new ConcurrentHashSet<>();
-        private final Random random = new Random();
-        @Override
-        public int getType() {
-            return RANDOM;
-        }
-
-        @Override
-        public void setCursIndex(int cursPosition) {
-            super.setCursIndex(cursPosition);
-            if (!playedQueue.isEmpty() && playedQueue.peekLast().equals(cursPosition)) {
-                App.log("playedQueue: {}", playedQueue);
-                return;
-            }
-            playedQueue.offerLast(cursPosition);
-            set.add(cursPosition);
-            cut();
-            App.log("playedQueue: {}", playedQueue);
-        }
-
-        @Override
-        public int previous() {
-            if (playedQueue.isEmpty()) {
-                return next();
-            }
-            Integer removed = playedQueue.pollLast();
-            set.remove(removed);
-            if (!playedQueue.isEmpty()) {
-                return playedQueue.peekLast();
-            }
-            return next();
-        }
-
-        @Override
-        public int next() {
-            return randomPosition();
-        }
-
-        private void cut() {
-            while (playedQueue.size() > 10) {
-                playedQueue.pollFirst();
-            }
-        }
-
-        private int randomPosition() {
-            int r;
-            do {
-                r = random.nextInt(musicProvider.count());
-            } while (set.contains(r));
-            return r;
-        }
-    }
-
-    public class SingleLoopPlayStrategy extends AbsPlaySwitchStrategy {
-        @Override
-        public int getType() {
-            return LOOP;
-        }
-
-        @Override
-        public int previous() {
-            return position;
-        }
-
-        @Override
-        public int next() {
-            return position;
-        }
+    @Override
+    public void onDestroy() {
+        unregisterReceiver(intentReceiver);
+        musicPlayer.destroy();
+        mediaSession.release();
     }
 }

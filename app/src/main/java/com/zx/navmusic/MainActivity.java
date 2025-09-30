@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -14,20 +15,48 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.zx.navmusic.common.App;
+import com.zx.navmusic.common.Constants;
 import com.zx.navmusic.common.LocalStore;
+import com.zx.navmusic.common.Util;
 import com.zx.navmusic.databinding.ActivityMainBinding;
 import com.zx.navmusic.util.PermissionUtils;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
+    private String action;
+    private final Map<String, Runnable> navigationMap = new HashMap<>();
+
+    private final Runnable navigatePlaying = () -> {
+        Util.navigatePlaying(MainActivity.this);
+    };
+
+    private final Runnable navigateSearch = () -> {
+        Bundle bundle = new Bundle();
+        NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_activity_main);
+        navController.navigate(R.id.navigation_dashboard, bundle);
+    };
+
+    private final Runnable navigateSetting = () -> {
+        Bundle bundle = new Bundle();
+        NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_activity_main);
+        navController.navigate(R.id.navigation_settings, bundle);
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.hide();
+        }
+
+        action = getIntent().getAction();
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -35,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications)
+                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_settings)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
@@ -44,18 +73,15 @@ public class MainActivity extends AppCompatActivity {
         App.App_Name = getString(R.string.app_name);
         App.MainActivity = this;
 
+        navigationMap.put(Constants.NAVIGATE_SETTING, navigateSetting);
+        navigationMap.put(Constants.NAVIGATE_PLAYING, navigatePlaying);
+        navigationMap.put(Constants.NAVIGATE_SEARCH, navigateSearch);
 
         if (!PermissionUtils.checkFilePermission(this)) {
             Log.d(App.App_Name, "开始申请权限");
         } else {
             Log.d(App.App_Name, "具备权限");
         }
-
-
-        // 监听蓝牙连接和断开
-//        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED);
-//        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-//        activity.registerReceiver(bluetoothReceiver, filter);
 
         Intent intent = new Intent(this, MusicService.class);
         startForegroundService(intent);
@@ -89,5 +115,12 @@ public class MainActivity extends AppCompatActivity {
 //        Toast.makeText(this, permissionName + "申请" + (result ? "成功" : "失败"), Toast.LENGTH_SHORT).show();
         Log.d(App.App_Name, String.format("[权限申请结果] requestCode: %s, permissions: %s, grantResults: %s",
                 requestCode, Arrays.toString(permissions), Arrays.toString(grantResults)));
+    }
+
+    private void loadEverything() {
+        Runnable navigation = navigationMap.get(action);
+        if (navigation != null) {
+            navigation.run();
+        }
     }
 }
