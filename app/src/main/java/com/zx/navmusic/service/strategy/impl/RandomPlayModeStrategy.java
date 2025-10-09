@@ -11,16 +11,13 @@ import java.util.List;
 public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
 
     private final List<Integer> list = new ArrayList<>();
-    private int musicPos = 0;
+    private int musicPos = -1;
 
     public RandomPlayModeStrategy() {
         super(PlayModeStrategy.RANDOM);
-
-        init();
-        getMusicProvider().observeForever(lst -> init());
     }
 
-    private synchronized void init() {
+    protected synchronized void init() {
         if (getMusicProvider() == null) {
             return;
         }
@@ -32,10 +29,18 @@ public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
             }
             Collections.shuffle(list);
         }
-        if (!list.isEmpty() && !list.get(position).equals(musicPos)) {
-            App.log("[RandomPlay]resetPos --> {}", musicPos);
-            resetPos(musicPos);
+        if (!list.isEmpty()) {
+            if (musicPos == -1) {
+                musicPos = list.get(0);
+                position = 0;
+                App.log("[RandomPlay]first init --> {}", musicPos);
+            }
+            else if (!list.get(position).equals(musicPos)) {
+                App.log("[RandomPlay]resetPos --> {}", musicPos);
+                resetPos(musicPos);
+            }
         }
+        super.init();
     }
 
     @Override
@@ -48,6 +53,7 @@ public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).equals(position)) {
                 this.position = i;
+                this.musicPos = list.get(i);
                 return;
             }
         }

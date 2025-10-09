@@ -1,5 +1,7 @@
 package com.zx.navmusic.service.strategy;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface PlayModeStrategy {
     int LINEAR = 0;
     int RANDOM = 1;
@@ -12,4 +14,6 @@ public interface PlayModeStrategy {
     int next();
     int peekPrevious();
     int peekNext();
+
+    CompletableFuture<Boolean> listenInit();
 }

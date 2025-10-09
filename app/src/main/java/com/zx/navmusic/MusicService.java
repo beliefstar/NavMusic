@@ -27,7 +27,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.ServiceCompat;
 import androidx.core.graphics.drawable.IconCompat;
-import androidx.lifecycle.Observer;
 
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.Util;
@@ -40,7 +39,7 @@ import com.zx.navmusic.service.MusicPlayer;
 import com.zx.navmusic.service.strategy.PlayModeFactory;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
 
-import java.util.List;
+import java.util.function.BiConsumer;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -72,7 +71,6 @@ public class MusicService extends Service {
     private MusicPlayer musicPlayer;
     private PlayModeStrategy playModeStrategy;
     private MusicPlayState musicPlayState;
-    private boolean init = false;
 
     private final NotifyListener notifyListener = new NotifyListener() {
         @Override
@@ -82,15 +80,18 @@ public class MusicService extends Service {
         }
     };
 
-    private final Observer<List<MusicItem>> initer = musicItems -> {
-        if (musicItems == null) {
-            return;
-        }
-        if (!init && !musicItems.isEmpty()) {
+    private final BiConsumer<Boolean, Throwable> initer = (res, err) -> {
+        if (err != null) {
+            App.log("PlayModeStrategy listenInit error: {}", err.getMessage());
+        } else {
+            App.log("PlayModeStrategy listenInit --> {}", getMusicProvider().count());
             int curPos = playModeStrategy.getCurPos();
-            musicPlayer.load(musicItems.get(curPos));
+            MusicItem item = getMusicProvider().getItem(curPos);
+            if (item != null) {
+                App.log("PlayModeStrategy listenInit success");
+                musicPlayer.load(item);
+            }
         }
-        init = true;
     };
 
     private final MusicPlayer.Listener playerListener = new MusicPlayer.Listener() {
@@ -118,13 +119,11 @@ public class MusicService extends Service {
         playModeStrategy = PlayModeFactory.get(PlayModeStrategy.RANDOM);
         musicPlayState = new MusicPlayState();
 
+        playModeStrategy.listenInit().whenComplete(initer);
         musicPlayer.setListener(playerListener);
         NotifyCenter.registerListener(notifyListener);
+        getMusicProvider().init(this);
         initChannel();
-
-        MusicLiveProvider musicProvider = getMusicProvider();
-        musicProvider.observeForever(initer);
-        musicProvider.init(this);
 
         INSTANCE = this;
 
