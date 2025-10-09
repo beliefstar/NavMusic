@@ -73,7 +73,6 @@ public class MusicService extends Service {
     private PlayModeStrategy playModeStrategy;
     private MusicPlayState musicPlayState;
     private boolean init = false;
-    private boolean autoPlay = false;
 
     private final NotifyListener notifyListener = new NotifyListener() {
         @Override
@@ -103,10 +102,6 @@ public class MusicService extends Service {
 
         @Override
         public void onReady() {
-            if (autoPlay) {
-                App.log("onReady-play");
-                play();
-            }
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
         }
     };
@@ -119,7 +114,7 @@ public class MusicService extends Service {
         App.log("[MusicService] - onCreate");
         mediaSession = initMediaSession();
         notificationBuilder = initNotificationBuilder();
-        musicPlayer = new MusicPlayer();
+        musicPlayer = new MusicPlayer(this);
         playModeStrategy = PlayModeFactory.get(PlayModeStrategy.RANDOM);
         musicPlayState = new MusicPlayState();
 
@@ -236,7 +231,7 @@ public class MusicService extends Service {
 
     private void initChannel() {
         notificationManager = NotificationManagerCompat.from(this);
-        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "NavMusic", NotificationManager.IMPORTANCE_HIGH);
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, App.App_Name, NotificationManager.IMPORTANCE_HIGH);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         notificationManager.createNotificationChannel(channel);
     }
@@ -244,27 +239,18 @@ public class MusicService extends Service {
     private void play(int index) {
         MusicItem item = getMusicProvider().getItem(index);
         if (item != null) {
-            autoPlay = true;
-            musicPlayer.load(item);
+            musicPlayer.play(item);
             playModeStrategy.resetPos(index);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
         }
     }
 
     private void play() {
-        if (musicPlayer.isPlaying()) {
-            return;
-        }
-        autoPlay = true;
-        musicPlayer.play();
+        musicPlayer.start();
         NotifyCenter.onMusicStateChange(buildMusicPlayState());
     }
 
     private void pause() {
-        if (!musicPlayer.isPlaying()) {
-            autoPlay = false;
-            return;
-        }
         musicPlayer.pause();
         NotifyCenter.onMusicStateChange(buildMusicPlayState());
     }
@@ -437,8 +423,11 @@ public class MusicService extends Service {
     public void onMusicChange(MusicItem out, MusicItem in, int seek, int duration) {
         // 切换音乐时调用
         double percent = (duration > 0) ? (double) seek / duration : 0;
+        if (percent == 0) {
+            return;
+        }
         if (percent < 0.95) {
-            // 不是手动切换，并且没有播放完，记录上次播放进度
+            // 没有播放完
             out.score -= 5;
         } else {
             out.score += 1;

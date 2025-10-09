@@ -33,6 +33,7 @@ import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.event.NotifyListener;
 import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.MusicPlayState;
+import com.zx.navmusic.service.strategy.PlayModeStrategy;
 import com.zx.navmusic.ui.UIFragment;
 
 import java.util.Optional;
@@ -47,6 +48,7 @@ public class HomeFragment extends Fragment implements NotifyListener {
     private TextView tvPlayMusicName;
 
     private ObjectAnimator rotation;
+    private MusicListAdapter listAdapter;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -58,16 +60,21 @@ public class HomeFragment extends Fragment implements NotifyListener {
         AtomicReference<String> argMusicId =
                 new AtomicReference<>(Optional.ofNullable(getArguments()).map(arg -> arg.getString(App.MUSIC_ID)).orElse(null));
 
-        MusicListAdapter adapter = new MusicListAdapter(getActivity(), R.layout.music_list_item);
+        listAdapter = new MusicListAdapter(getActivity(), R.layout.music_list_item);
 
         MusicLiveProvider.getInstance().observeForever(list -> {
             if (CollUtil.isEmpty(list)) {
                 return;
             }
-            adapter.onChange(list);
+            MusicPlayState musicPlayState = NotifyCenter.getMusicPlayState();
+            int playMode = PlayModeStrategy.LINEAR;
+            if (musicPlayState != null) {
+                playMode = musicPlayState.playSwitchStrategy;
+            }
+            listAdapter.onChange(list, playMode);
         });
 
-        binding.lvList.setAdapter(adapter);
+        binding.lvList.setAdapter(listAdapter);
         binding.tvPlayMusicName.setOnClickListener(v -> {
             Activity ctx = getActivity();
             if (ctx != null) {
@@ -134,6 +141,7 @@ public class HomeFragment extends Fragment implements NotifyListener {
                 rotation.pause();
             }
         }
+        listAdapter.onChange(MusicLiveProvider.getInstance().getList(), playState.playSwitchStrategy);
     }
 
     private void initCircularImage() {

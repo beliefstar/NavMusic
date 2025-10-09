@@ -13,11 +13,13 @@ import androidx.appcompat.app.AlertDialog;
 
 import com.zx.navmusic.MusicService;
 import com.zx.navmusic.R;
+import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.Util;
 import com.zx.navmusic.common.bean.MusicItem;
 import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.MusicPlayState;
+import com.zx.navmusic.service.strategy.PlayModeStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,7 @@ public class MusicListAdapter extends BaseAdapter {
     private final Activity mContext;
     private final int mResource;
     private List<MusicItem> mObjects;
+    private int playMode;
 
     public MusicListAdapter(Activity context, int resource) {
         mContext = context;
@@ -56,11 +59,22 @@ public class MusicListAdapter extends BaseAdapter {
         return createViewFromResource(mInflater, position, convertView, parent, mResource);
     }
 
-    public void onChange(List<MusicItem> lst) {
+    public void onChange(List<MusicItem> lst, int playMode) {
         if (lst == null) {
             return;
         }
-        mObjects = lst;
+        App.log("MusicListAdapter onChange {}, {}", lst.size(), playMode);
+        List<MusicItem> copy = new ArrayList<>(lst);
+        if (playMode == PlayModeStrategy.RANDOM) {
+            copy.sort((a, b) -> {
+                if (a.score.equals(b.score)) {
+                    return a.name.compareTo(b.name);
+                }
+                return b.score - a.score;
+            });
+        }
+        mObjects = copy;
+        this.playMode = playMode;
         notifyDataSetChanged();
     }
 
@@ -115,7 +129,11 @@ public class MusicListAdapter extends BaseAdapter {
             text.setText(item.name);
 
             TextView textScore = view.findViewById(R.id.tv_mli_score);
-            textScore.setText(String.valueOf(item.score));
+            if (playMode == PlayModeStrategy.RANDOM) {
+                textScore.setText(String.valueOf(item.score));
+            } else {
+                textScore.setText("");
+            }
         } catch (ClassCastException e) {
             Log.e("MusicListAdapter", "You must supply a resource ID for a TextView");
             throw new IllegalStateException(

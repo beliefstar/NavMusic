@@ -1,7 +1,8 @@
 package com.zx.navmusic.service.strategy.impl;
 
-import com.zx.navmusic.service.strategy.PlayModeStrategy;
+import com.zx.navmusic.common.App;
 import com.zx.navmusic.service.strategy.AbsPlayModeStrategy;
+import com.zx.navmusic.service.strategy.PlayModeStrategy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,6 +11,7 @@ import java.util.List;
 public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
 
     private final List<Integer> list = new ArrayList<>();
+    private int musicPos = 0;
 
     public RandomPlayModeStrategy() {
         super(PlayModeStrategy.RANDOM);
@@ -19,30 +21,34 @@ public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
     }
 
     private synchronized void init() {
-        list.clear();
-        if (getMusicProvider().count() == 0) {
+        if (getMusicProvider() == null) {
             return;
         }
-        for (int i = 0; i < getMusicProvider().count(); i++) {
-            list.add(i);
+        if (list.size() != getMusicProvider().count()) {
+            App.log("[RandomPlay]re random list --> {}", list);
+            list.clear();
+            for (int i = 0; i < getMusicProvider().count(); i++) {
+                list.add(i);
+            }
+            Collections.shuffle(list);
         }
-        Collections.shuffle(list);
-
-        if (position > list.size() - 1) {
-            position = list.size() - 1;
+        if (!list.isEmpty() && !list.get(position).equals(musicPos)) {
+            App.log("[RandomPlay]resetPos --> {}", musicPos);
+            resetPos(musicPos);
         }
     }
 
     @Override
     public int getCurPos() {
-        return list.isEmpty() ? 0 : list.get(position);
+        return list.isEmpty() ? 0 : musicPos;
     }
 
     @Override
     public void resetPos(int position) {
         for (int i = 0; i < list.size(); i++) {
-            if (list.get(i) == position) {
+            if (list.get(i).equals(position)) {
                 this.position = i;
+                return;
             }
         }
     }
@@ -50,13 +56,15 @@ public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
     @Override
     public int previous() {
         position = position == 0 ? list.size() - 1 : position - 1;
-        return list.get(position);
+        musicPos = list.get(position);
+        return musicPos;
     }
 
     @Override
     public int next() {
         position = (position + 1) % list.size();
-        return list.get(position);
+        musicPos = list.get(position);
+        return musicPos;
     }
 
     @Override
