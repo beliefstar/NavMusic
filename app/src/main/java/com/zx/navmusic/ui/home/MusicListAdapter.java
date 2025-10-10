@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
@@ -128,11 +129,10 @@ public class MusicListAdapter extends BaseAdapter {
             TextView text = view.findViewById(R.id.tv_mli);
             text.setText(item.name);
 
-            TextView textScore = view.findViewById(R.id.tv_mli_score);
-            if (playMode == PlayModeStrategy.RANDOM) {
-                textScore.setText(String.valueOf(item.score));
-            } else {
-                textScore.setText("");
+            ImageView imageView = view.findViewById(R.id.iv_mli_icon);
+            int rankRes = item.getRankRes();
+            if (rankRes > 0) {
+                imageView.setImageResource(rankRes);
             }
         } catch (ClassCastException e) {
             Log.e("MusicListAdapter", "You must supply a resource ID for a TextView");

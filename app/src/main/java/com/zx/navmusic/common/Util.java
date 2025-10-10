@@ -66,4 +66,20 @@ public class Util {
                 context.getResources().getDisplayMetrics()
         );
     }
+
+    public static int musicRankRes(int score) {
+        if (score > 50) {
+            return R.drawable.ic_crown;
+        }
+        if (score > 30) {
+            return R.drawable.ic_sun;
+        }
+        if (score > 15) {
+            return R.drawable.ic_moon;
+        }
+        if (score > 5) {
+            return R.drawable.ic_star;
+        }
+        return 0;
+    }
 }

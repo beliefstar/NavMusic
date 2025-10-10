@@ -33,10 +33,8 @@ public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
             if (musicPos == -1) {
                 musicPos = list.get(0);
                 position = 0;
-                App.log("[RandomPlay]first init --> {}", musicPos);
             }
             else if (!list.get(position).equals(musicPos)) {
-                App.log("[RandomPlay]resetPos --> {}", musicPos);
                 resetPos(musicPos);
             }
         }

@@ -2,6 +2,8 @@ package com.zx.navmusic.common.bean;
 
 import androidx.annotation.NonNull;
 
+import com.zx.navmusic.common.Util;
+
 public class MusicItem {
 
     public String id;
@@ -24,6 +26,10 @@ public class MusicItem {
         this.id = id;
         this.name = name;
         this.cache = cache;
+    }
+
+    public int getRankRes() {
+        return Util.musicRankRes(score);
     }
 
     @NonNull

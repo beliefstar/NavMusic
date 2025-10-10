@@ -10,6 +10,7 @@ import androidx.fragment.app.FragmentActivity;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.zx.navmusic.MusicService;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.AsyncTask;
 import com.zx.navmusic.common.Constants;
@@ -61,7 +62,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
         public void run() {
             try {
                 App.log("定时保存数据");
-                storeData(App.MainActivity);
+                storeData(MusicService.INSTANCE);
             } finally {
                 mainHandler.postDelayed(this, TimeUnit.MINUTES.toMillis(1));
             }

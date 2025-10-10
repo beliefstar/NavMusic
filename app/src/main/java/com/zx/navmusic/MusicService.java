@@ -238,6 +238,7 @@ public class MusicService extends Service {
     private void play(int index) {
         MusicItem item = getMusicProvider().getItem(index);
         if (item != null) {
+            beforeMusicChange(item);
             musicPlayer.play(item);
             playModeStrategy.resetPos(index);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
@@ -425,10 +426,7 @@ public class MusicService extends Service {
         if (percent == 0) {
             return;
         }
-        if (percent < 0.95) {
-            // 没有播放完
-            out.score -= 5;
-        } else {
+        if (percent >= 0.95) {
             out.score += 1;
         }
         App.log("onMusicChange out:{}, score:{}", out.name, out.score);

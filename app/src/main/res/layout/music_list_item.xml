@@ -14,12 +14,12 @@
         android:layout_weight="1"
         android:gravity="center_vertical">
     </TextView>
-    <TextView
-        android:id="@+id/tv_mli_score"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:paddingStart="15sp"
-        android:paddingEnd="15sp"
-        android:gravity="center_vertical">
-    </TextView>
+    <ImageView
+        android:id="@+id/iv_mli_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center"
+        android:layout_marginEnd="10sp"
+        android:contentDescription="@string/none"
+        />
 </LinearLayout>
