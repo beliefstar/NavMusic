@@ -2,6 +2,8 @@ package com.zx.navmusic.service;
 
 public class MusicPlayState {
 
+    public String id;
+
     public String name;
 
     public String artist;

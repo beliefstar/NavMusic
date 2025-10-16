@@ -33,4 +33,6 @@ public interface MusicProvider {
     CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchItem si);
 
     void remove(int position);
+
+    void remove(String id);
 }

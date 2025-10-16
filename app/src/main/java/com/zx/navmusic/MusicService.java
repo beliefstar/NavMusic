@@ -283,6 +283,7 @@ public class MusicService extends Service {
         musicPlayState.index = playModeStrategy.getCurPos();
         MusicItem item = getMusicProvider().getItem(playModeStrategy.getCurPos());
         if (item != null) {
+            musicPlayState.id = item.id;
             musicPlayState.name = item.name;
             Util.parsePlayState(musicPlayState);
         }

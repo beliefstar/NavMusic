@@ -162,6 +162,13 @@ public class LocalMusicProvider extends CloudMusicProvider {
     }
 
     @Override
+    public void remove(String id) {
+        ArrayList<MusicItem> list = new ArrayList<>(getList());
+        list.removeIf(m -> StrUtil.equals(m.id, id));
+        postValue(list);
+    }
+
+    @Override
     public CompletableFuture<List<SearchItem>> search(FragmentActivity activity, String keyword) {
 //        App.toast(activity, "useLocalMode: {}", useLocalMode);
         if (!useLocalMode) {

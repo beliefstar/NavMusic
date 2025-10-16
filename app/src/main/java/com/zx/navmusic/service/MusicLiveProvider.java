@@ -62,6 +62,11 @@ public abstract class MusicLiveProvider extends LiveData<List<MusicItem>> implem
     }
 
     @Override
+    public void remove(String id) {
+
+    }
+
+    @Override
     public List<SearchItem> searchLocal(String keyword) {
         List<MusicItem> values = getValue();
         if (CollUtil.isEmpty(values)) {

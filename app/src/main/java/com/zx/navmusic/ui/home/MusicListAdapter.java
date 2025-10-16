@@ -24,6 +24,7 @@ import com.zx.navmusic.service.strategy.PlayModeStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class MusicListAdapter extends BaseAdapter {
 
@@ -93,7 +94,7 @@ public class MusicListAdapter extends BaseAdapter {
 
         view.setOnLongClickListener(v -> {
             int mPosition = (int) v.getTag();
-            MusicItem item = MusicLiveProvider.getInstance().getItem(mPosition);
+            MusicItem item = (MusicItem) getItem(mPosition);
             if (item == null) {
                 return true;
             }
@@ -103,12 +104,12 @@ public class MusicListAdapter extends BaseAdapter {
                     .setMessage(item.name)
                     .setPositiveButton("删除", (dialog, which) -> {
                         MusicPlayState musicPlayState = NotifyCenter.getMusicPlayState();
-                        if (musicPlayState != null && musicPlayState.index == mPosition) {
+                        if (musicPlayState != null && Objects.equals(musicPlayState.id, item.id)) {
                             Intent intent = new Intent(mContext, MusicService.class);
                             intent.setAction(MusicService.ACTION_NEXT);
                             mContext.startForegroundService(intent);
                         }
-                        MusicLiveProvider.getInstance().remove(mPosition);
+                        MusicLiveProvider.getInstance().remove(item.id);
                     })
                     .setNegativeButton("取消", null)
                     .show();
@@ -116,9 +117,14 @@ public class MusicListAdapter extends BaseAdapter {
         });
 
         view.setOnClickListener(v -> {
+            int mPosition = (int) v.getTag();
+            MusicItem item = (MusicItem) getItem(mPosition);
+            if (item == null) {
+                return;
+            }
             Intent intent = new Intent(mContext, MusicService.class);
             intent.setAction(MusicService.ACTION_PLAY);
-            intent.putExtra(MusicService.ACTION_PLAY_INDEX, (int) v.getTag());
+            intent.putExtra(MusicService.ACTION_PLAY_ID, item.id);
             mContext.startForegroundService(intent);
 
             Util.navigatePlaying(mContext);
@@ -133,6 +139,9 @@ public class MusicListAdapter extends BaseAdapter {
             int rankRes = item.getRankRes();
             if (rankRes > 0) {
                 imageView.setImageResource(rankRes);
+                imageView.setVisibility(View.VISIBLE);
+            } else {
+                imageView.setVisibility(View.GONE);
             }
         } catch (ClassCastException e) {
             Log.e("MusicListAdapter", "You must supply a resource ID for a TextView");
