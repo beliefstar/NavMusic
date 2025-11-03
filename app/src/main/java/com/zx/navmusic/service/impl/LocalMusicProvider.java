@@ -18,9 +18,9 @@ import com.zx.navmusic.common.Encryptor;
 import com.zx.navmusic.common.LocalAudioStore;
 import com.zx.navmusic.common.LocalStore;
 import com.zx.navmusic.common.SignatureUtil;
-import com.zx.navmusic.common.bean.ConfigDataBean;
 import com.zx.navmusic.common.bean.MusicItem;
 import com.zx.navmusic.common.bean.SearchItem;
+import com.zx.navmusic.config.ConfigCenter;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -50,11 +50,6 @@ import cn.hutool.http.HttpUtil;
 
 public class LocalMusicProvider extends CloudMusicProvider {
 
-    private boolean useLocalMode = false;
-
-    public static final String DEFAULT_BBS_TOKEN = "B913yznE7cUXNjnWjIAJtIAHZdodup7D8iEnJmoP_2F3FUpn0h7FuSidh_2FYVUIUZ4bfjy3TSOnI0xstnhjTbfG9VJN56M_3D";
-    public ConfigDataBean configData;
-
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private final Runnable storeTask = new Runnable() {
@@ -73,12 +68,6 @@ public class LocalMusicProvider extends CloudMusicProvider {
 
     @Override
     public void init(Context ctx) {
-        configData = LocalStore.loadConfigData(ctx);
-
-        if (StrUtil.isBlank(configData.bbsToken)) {
-            setBbsToken(ctx, DEFAULT_BBS_TOKEN);
-        }
-
         List<MusicItem> musicItems = LocalStore.loadMusicData(ctx);
         postValue(musicItems);
 
@@ -104,14 +93,6 @@ public class LocalMusicProvider extends CloudMusicProvider {
 //        });
     }
 
-    public void setBbsToken(Context ctx, String bbsToken) {
-        configData.bbsToken = bbsToken;
-        LocalStore.flushConfig(ctx, configData);
-    }
-
-    public String getBbsToken() {
-        return configData.bbsToken;
-    }
 
     @Override
     public CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchItem si) {
@@ -145,7 +126,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
                 }
 
                 mi.name = name;
-                mi.cache = !useLocalMode;
+                mi.cache = !ConfigCenter.isUseLocalMode();
 
                 return doTouchMusic(activity, mi, url);
             } finally {
@@ -171,7 +152,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
     @Override
     public CompletableFuture<List<SearchItem>> search(FragmentActivity activity, String keyword) {
 //        App.toast(activity, "useLocalMode: {}", useLocalMode);
-        if (!useLocalMode) {
+        if (!ConfigCenter.isUseLocalMode()) {
             return super.search(activity, keyword);
         }
 
@@ -197,14 +178,6 @@ public class LocalMusicProvider extends CloudMusicProvider {
             }
             return items;
         });
-    }
-
-    public void setUseLocalMode(boolean mode) {
-        this.useLocalMode = mode;
-    }
-
-    public boolean getUseLocalMode() {
-        return useLocalMode;
     }
 
     private MusicItem addItem(SearchItem si) {
@@ -311,13 +284,14 @@ public class LocalMusicProvider extends CloudMusicProvider {
         if (Boolean.TRUE.equals(si.cache)) {
             return super.getItemRemoteUrl(si.id);
         }
-        if (!useLocalMode) {
+        if (!ConfigCenter.isUseLocalMode()) {
             return getDownloadUrl(si);
         }
+        String bbsToken = ConfigCenter.getBbsToken();
         try {
             String url = "https://www.hifini.com/" + si.thread;
             HttpRequest req = HttpRequest.get(url)
-                    .header("Cookie", "bbs_token=" + getBbsToken());
+                    .header("Cookie", "bbs_token=" + bbsToken);
             String listContent = req.execute().body();
 //            String listContent = HttpUtil.get(url);
             List<String> titles = ReUtil.findAll("music: \\[(.*?)\\]", listContent, 1);
@@ -370,26 +344,6 @@ public class LocalMusicProvider extends CloudMusicProvider {
         return Base64.encodeUrlSafe(name) + Constants.MUSIC_NAME_SUFFIX;
     }
 
-    private static String extractRef(String s) {
-        List<String> titles = ReUtil.findAll("<a href=\"(thread-\\w+.htm)\">.*?</a>", s, 1);
-        for (String title : titles) {
-            title = title.replace("<em>", "");
-            title = title.replace("</em>", "");
-            title = title.trim();
-            return title;
-        }
-        return "";
-    }
-    private static String extractTitle(String s) {
-        List<String> titles = ReUtil.findAll("<a href=\"thread-\\w+.htm\">(.*?)(\\[.*?])?</a>", s, 1);
-        for (String title : titles) {
-            title = title.replace("<em>", "");
-            title = title.replace("</em>", "");
-            title = title.trim();
-            return title;
-        }
-        return "";
-    }
     private static String parseName(String name) {
         int lidx = name.indexOf("[");
         int ridx = name.lastIndexOf("]");

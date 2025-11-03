@@ -9,7 +9,7 @@ public interface PlayModeStrategy {
 
     int getType();
     int getCurPos();
-    void resetPos(int position);
+    void resetPos(int position, boolean refresh);
     int previous();
     int next();
     int peekPrevious();

@@ -5,4 +5,7 @@ public class ConfigDataBean {
 
     public String bbsToken;
 
+    public Integer favoriteStep;
+
+    public Boolean useLocalMode;
 }

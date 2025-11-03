@@ -31,6 +31,14 @@ public abstract class AbsPlayModeStrategy implements PlayModeStrategy {
         }
     }
 
+    protected void resetPos(int position) {
+    }
+
+    @Override
+    public void resetPos(int position, boolean refresh) {
+        resetPos(position);
+    }
+
     @Override
     public CompletableFuture<Boolean> listenInit() {
         return initFuture;

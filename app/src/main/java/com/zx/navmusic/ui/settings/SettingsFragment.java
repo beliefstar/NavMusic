@@ -14,11 +14,13 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.zx.navmusic.PlaybackActivity;
+import com.zx.navmusic.config.ConfigCenter;
 import com.zx.navmusic.databinding.FragmentSettingsBinding;
 import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.impl.CloudMusicProvider;
-import com.zx.navmusic.service.impl.LocalMusicProvider;
 import com.zx.navmusic.ui.UIFragment;
+
+import cn.hutool.core.util.NumberUtil;
 
 public class SettingsFragment extends Fragment {
 
@@ -47,17 +49,12 @@ public class SettingsFragment extends Fragment {
             CloudMusicProvider provider = (CloudMusicProvider) instance;
             binding.etToken.setText(provider.getToken());
         }
-        if (instance instanceof LocalMusicProvider) {
-            LocalMusicProvider provider = (LocalMusicProvider) instance;
-            binding.cbUseLocalMode.setChecked(provider.getUseLocalMode());
-            binding.etBbsToken.setText(provider.getBbsToken());
-        }
+        binding.cbUseLocalMode.setChecked(ConfigCenter.isUseLocalMode());
+        binding.etBbsToken.setText(ConfigCenter.getBbsToken());
+        binding.etFavoriteTep.setText(String.valueOf(ConfigCenter.getFavoriteStep()));
 
         binding.cbUseLocalMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (instance instanceof LocalMusicProvider) {
-                LocalMusicProvider provider = (LocalMusicProvider) instance;
-                provider.setUseLocalMode(isChecked);
-            }
+            ConfigCenter.change(configData -> configData.useLocalMode = isChecked, getContext());
         });
 
         binding.etToken.addTextChangedListener(new TextWatcher() {
@@ -95,10 +92,25 @@ public class SettingsFragment extends Fragment {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (instance instanceof LocalMusicProvider) {
-                    LocalMusicProvider provider = (LocalMusicProvider) instance;
-                    provider.setBbsToken(getContext(), s.toString());
-                }
+                ConfigCenter.change(configData -> configData.bbsToken = s.toString(), getContext());
+            }
+        });
+
+        binding.etFavoriteTep.addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                ConfigCenter.change(configData -> configData.favoriteStep = NumberUtil.parseInt(s.toString()), getContext());
             }
         });
 

@@ -3,6 +3,7 @@ package com.zx.navmusic.common;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.util.TypedValue;
 
 import com.zx.navmusic.MainActivity;
@@ -81,5 +82,9 @@ public class Util {
             return R.drawable.ic_star;
         }
         return 0;
+    }
+
+    public static Uri getFileUri(Context ctx, String filename) {
+        return LocalAudioStore.find(ctx, filename);
     }
 }

@@ -1,6 +1,9 @@
 package com.zx.navmusic.service.strategy.impl;
 
 import com.zx.navmusic.common.App;
+import com.zx.navmusic.common.bean.MusicItem;
+import com.zx.navmusic.config.ConfigCenter;
+import com.zx.navmusic.favorite.FavoriteLevel;
 import com.zx.navmusic.service.strategy.AbsPlayModeStrategy;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
 
@@ -22,12 +25,7 @@ public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
             return;
         }
         if (list.size() != getMusicProvider().count()) {
-            App.log("[RandomPlay]re random list --> {}", list);
-            list.clear();
-            for (int i = 0; i < getMusicProvider().count(); i++) {
-                list.add(i);
-            }
-            Collections.shuffle(list);
+            freshList();
         }
         if (!list.isEmpty()) {
             if (musicPos == -1) {
@@ -35,10 +33,31 @@ public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
                 position = 0;
             }
             else if (!list.get(position).equals(musicPos)) {
-                resetPos(musicPos);
+                resetPos(musicPos, false);
             }
         }
         super.init();
+    }
+
+    private void freshList() {
+        list.clear();
+        int step = ConfigCenter.getFavoriteStep();
+
+        for (int i = 0; i < getMusicProvider().count(); i++) {
+            list.add(i);
+
+            MusicItem item = getMusicProvider().getItem(i);
+            FavoriteLevel.LevelInfo level = FavoriteLevel.fromScore(item.score);
+            int num = level.level * step;
+
+            for (int t = num; t > 0; t--) {
+                list.add(i);
+            }
+        }
+
+        Collections.shuffle(list);
+
+        App.log("[RandomPlay]re random list --> {}", list);
     }
 
     @Override
@@ -47,7 +66,10 @@ public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
     }
 
     @Override
-    public void resetPos(int position) {
+    public void resetPos(int position, boolean refresh) {
+        if (refresh) {
+            freshList();
+        }
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).equals(position)) {
                 this.position = i;

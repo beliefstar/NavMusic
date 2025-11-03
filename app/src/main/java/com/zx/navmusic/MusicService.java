@@ -31,6 +31,7 @@ import androidx.core.graphics.drawable.IconCompat;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.Util;
 import com.zx.navmusic.common.bean.MusicItem;
+import com.zx.navmusic.config.ConfigCenter;
 import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.event.NotifyListener;
 import com.zx.navmusic.service.MusicLiveProvider;
@@ -113,6 +114,9 @@ public class MusicService extends Service {
     @Override
     public void onCreate() {
         App.log("[MusicService] - onCreate");
+        INSTANCE = this;
+        ConfigCenter.create(this);
+
         mediaSession = initMediaSession();
         notificationBuilder = initNotificationBuilder();
         musicPlayer = new MusicPlayer(this);
@@ -124,8 +128,6 @@ public class MusicService extends Service {
         NotifyCenter.registerListener(notifyListener);
         getMusicProvider().init(this);
         initChannel();
-
-        INSTANCE = this;
 
         // 注册广播事件
         IntentFilter intentFilter = new IntentFilter();
@@ -217,7 +219,7 @@ public class MusicService extends Service {
         }
         int curPos = playModeStrategy.getCurPos();
         playModeStrategy = PlayModeFactory.get(switchStrategyType);
-        playModeStrategy.resetPos(curPos);
+        playModeStrategy.resetPos(curPos, true);
         NotifyCenter.onMusicStateChange(buildMusicPlayState());
     }
 
@@ -240,7 +242,7 @@ public class MusicService extends Service {
         if (item != null) {
             beforeMusicChange(item);
             musicPlayer.play(item);
-            playModeStrategy.resetPos(index);
+            playModeStrategy.resetPos(index, false);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
         }
     }
