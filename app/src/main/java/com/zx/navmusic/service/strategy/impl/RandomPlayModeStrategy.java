@@ -43,10 +43,11 @@ public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
         list.clear();
         int step = ConfigCenter.getFavoriteStep();
 
-        for (int i = 0; i < getMusicProvider().count(); i++) {
+        List<MusicItem> items = getMusicProvider().getList();
+        for (int i = 0; i < items.size(); i++) {
             list.add(i);
 
-            MusicItem item = getMusicProvider().getItem(i);
+            MusicItem item = items.get(i);
             FavoriteLevel.LevelInfo level = FavoriteLevel.fromScore(item.score);
             int num = level.level * step;
 
