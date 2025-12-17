@@ -13,7 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.zx.navmusic.PlaybackActivity;
+import com.zx.navmusic.PlaybackNewActivity;
 import com.zx.navmusic.config.ConfigCenter;
 import com.zx.navmusic.databinding.FragmentSettingsBinding;
 import com.zx.navmusic.service.MusicLiveProvider;
@@ -50,11 +50,16 @@ public class SettingsFragment extends Fragment {
             binding.etToken.setText(provider.getToken());
         }
         binding.cbUseLocalMode.setChecked(ConfigCenter.isUseLocalMode());
+        binding.cbUseNewPlaybackUi.setChecked(ConfigCenter.isUseNewPlaybackUi());
         binding.etBbsToken.setText(ConfigCenter.getBbsToken());
         binding.etFavoriteTep.setText(String.valueOf(ConfigCenter.getFavoriteStep()));
 
         binding.cbUseLocalMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
             ConfigCenter.change(configData -> configData.useLocalMode = isChecked, getContext());
+        });
+
+        binding.cbUseNewPlaybackUi.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            ConfigCenter.change(configData -> configData.useNewPlaybackUi = isChecked, getContext());
         });
 
         binding.etToken.addTextChangedListener(new TextWatcher() {
@@ -124,7 +129,7 @@ public class SettingsFragment extends Fragment {
         binding.btnJump.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(getActivity(), PlaybackActivity.class));
+                startActivity(new Intent(getActivity(), PlaybackNewActivity.class));
             }
         });
         return root;

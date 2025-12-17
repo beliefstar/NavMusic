@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!--
      Required only if your app needs to access audio files
          that other apps created.
@@ -26,6 +25,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NavMusic"
         android:usesCleartextTraffic="true">
+        <activity
+            android:name=".PlaybackNewActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:exported="false" />
         <activity
             android:name=".PlaybackActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"

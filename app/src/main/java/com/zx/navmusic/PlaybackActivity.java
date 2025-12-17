@@ -5,12 +5,9 @@ import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
-import android.widget.SeekBar;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,6 +17,7 @@ import androidx.core.graphics.drawable.DrawableCompat;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.zx.navmusic.common.Constants;
+import com.zx.navmusic.common.SeekBarControl;
 import com.zx.navmusic.common.bean.MusicItem;
 import com.zx.navmusic.databinding.ActivityPlaybackBinding;
 import com.zx.navmusic.event.NotifyCenter;
@@ -28,15 +26,14 @@ import com.zx.navmusic.service.MusicPlayState;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
 
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PlaybackActivity extends AppCompatActivity {
 
     private ActivityPlaybackBinding binding;
 
     private ObjectAnimator rotation;
+    private SeekBarControl seekBarControl;
 
-    private final SeekBarControl seekBarControl = new SeekBarControl();
     private final NotifyListener notifyListener = new NotifyListener() {
         @Override
         public void onMusicStateChange(MusicPlayState playState) {
@@ -63,11 +60,11 @@ public class PlaybackActivity extends AppCompatActivity {
         render(musicPlayState);
 
         NotifyCenter.registerListener(notifyListener);
+        seekBarControl = new SeekBarControl(binding.sbPlaySeekBar);
         seekBarControl.start();
     }
 
     private void bindEvent() {
-        binding.sbPlaySeekBar.setOnSeekBarChangeListener(seekBarControl);
         binding.btnPlay.setOnClickListener(this::playPauseClick);
         binding.btnPreviousMusic.setOnClickListener(this::previousMusicClick);
         binding.btnNextMusic.setOnClickListener(this::nextMusicClick);
@@ -192,55 +189,5 @@ public class PlaybackActivity extends AppCompatActivity {
         int seconds = (milliseconds / 1000) % 60;
         int minutes = (milliseconds / (1000 * 60)) % 60;
         return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
-    }
-
-    private class SeekBarControl implements Runnable, SeekBar.OnSeekBarChangeListener {
-
-        private final Handler handler = new Handler(Looper.getMainLooper());
-        private final AtomicBoolean disable = new AtomicBoolean(false);
-
-        public void pause() {
-            if (disable.compareAndSet(true, false)) {
-                handler.removeCallbacks(this);
-            }
-        }
-
-        public void start() {
-            if (disable.compareAndSet(false, true)) {
-                handler.post(this);
-            }
-        }
-
-        @Override
-        public void run() {
-            if (MusicService.INSTANCE != null && disable.get()) {
-                int seek = MusicService.INSTANCE.getCurrentSeek();
-                binding.sbPlaySeekBar.setProgress(seek);
-
-                binding.tvPlayCurrentSeek.setText(formatTime(seek));
-
-                // 每100毫秒更新一次
-                handler.postDelayed(this, 100);
-            }
-        }
-
-        @Override
-        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            if (fromUser) {
-                MusicService.INSTANCE.seekTo(progress);
-            }
-        }
-
-        @Override
-        public void onStartTrackingTouch(SeekBar seekBar) {
-            // 用户开始拖动时暂停更新
-            pause();
-        }
-
-        @Override
-        public void onStopTrackingTouch(SeekBar seekBar) {
-            // 用户停止拖动后恢复更新
-            start();
-        }
     }
 }

@@ -8,7 +8,9 @@ import android.util.TypedValue;
 
 import com.zx.navmusic.MainActivity;
 import com.zx.navmusic.PlaybackActivity;
+import com.zx.navmusic.PlaybackNewActivity;
 import com.zx.navmusic.R;
+import com.zx.navmusic.config.ConfigCenter;
 import com.zx.navmusic.service.MusicPlayState;
 
 public class Util {
@@ -44,13 +46,16 @@ public class Util {
         }
     }
 
-
     public static Intent intentPlaying(Context ctx) {
-        return new Intent(ctx, PlaybackActivity.class);
+        return new Intent(ctx, ConfigCenter.isUseNewPlaybackUi()
+                ? PlaybackNewActivity.class
+                : PlaybackActivity.class);
     }
 
     public static void navigatePlaying(Activity ctx) {
-        ctx.startActivity(new Intent(ctx, PlaybackActivity.class));
+        ctx.startActivity(new Intent(ctx, ConfigCenter.isUseNewPlaybackUi()
+                ? PlaybackNewActivity.class
+                : PlaybackActivity.class));
         ctx.overridePendingTransition(R.anim.slide_in_bottom, 0);
     }
 

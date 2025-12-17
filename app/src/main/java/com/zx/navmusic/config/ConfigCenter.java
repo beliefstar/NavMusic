@@ -61,6 +61,10 @@ public class ConfigCenter {
         return INSTANCE.configData.useLocalMode;
     }
 
+    public static boolean isUseNewPlaybackUi() {
+        return INSTANCE.configData.useNewPlaybackUi;
+    }
+
     public static int getFavoriteStep() {
         return INSTANCE.configData.favoriteStep;
     }

@@ -8,4 +8,6 @@ public class ConfigDataBean {
     public Integer favoriteStep;
 
     public Boolean useLocalMode;
+
+    public Boolean useNewPlaybackUi = true;
 }
