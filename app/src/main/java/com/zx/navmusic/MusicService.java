@@ -71,7 +71,6 @@ public class MusicService extends Service {
     private NotificationManagerCompat notificationManager;
     private MusicPlayer musicPlayer;
     private PlayModeStrategy playModeStrategy;
-    private MusicPlayState musicPlayState;
 
     private final NotifyListener notifyListener = new NotifyListener() {
         @Override
@@ -121,7 +120,6 @@ public class MusicService extends Service {
         notificationBuilder = initNotificationBuilder();
         musicPlayer = new MusicPlayer(this);
         playModeStrategy = PlayModeFactory.get(PlayModeStrategy.RANDOM);
-        musicPlayState = new MusicPlayState();
 
         playModeStrategy.listenInit().whenComplete(initer);
         musicPlayer.setListener(playerListener);
@@ -278,7 +276,7 @@ public class MusicService extends Service {
     }
 
     private MusicPlayState buildMusicPlayState() {
-        musicPlayState.reset();
+        MusicPlayState musicPlayState = new MusicPlayState();
 
         musicPlayState.isPlaying = musicPlayer.isPlaying();
         musicPlayState.playSwitchStrategy = playModeStrategy.getType();

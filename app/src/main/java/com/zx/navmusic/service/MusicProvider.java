@@ -1,6 +1,7 @@
 package com.zx.navmusic.service;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 
 import androidx.fragment.app.FragmentActivity;
 
@@ -33,6 +34,8 @@ public interface MusicProvider {
     String getItemAlbumUrl(String musicId);
 
     CompletableFuture<List<String>> getItemLyric(String musicId);
+
+    CompletableFuture<Bitmap> getAlbum(String musicId);
 
     CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchItem si);
 

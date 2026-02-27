@@ -1,6 +1,7 @@
 package com.zx.navmusic.service.impl;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -194,6 +195,24 @@ public class LocalMusicProvider extends CloudMusicProvider {
             if (e == null && r != null) {
                 App.log("从云端加载歌词成功，准备保存到本地");
                 LocalStore.flushLyric(MusicService.INSTANCE, musicId, String.join("\n", r));
+            }
+        });
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<Bitmap> getAlbum(String musicId) {
+        Bitmap bitmap = LocalStore.loadAlbum(MusicService.INSTANCE, musicId);
+        if (bitmap != null) {
+            return CompletableFuture.completedFuture(bitmap);
+        }
+
+        CompletableFuture<Bitmap> future = super.getAlbum(musicId);
+
+        future.whenComplete((r, e) -> {
+            if (e == null && r != null) {
+                App.log("从云端加载专辑图片成功，准备保存到本地");
+                LocalStore.flushAlbum(MusicService.INSTANCE, musicId, r);
             }
         });
         return future;

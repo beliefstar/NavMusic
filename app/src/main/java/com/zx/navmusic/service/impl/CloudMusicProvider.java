@@ -1,6 +1,8 @@
 package com.zx.navmusic.service.impl;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import androidx.fragment.app.FragmentActivity;
@@ -156,6 +158,23 @@ public class CloudMusicProvider extends MusicLiveProvider {
         doRefresh();
     }
 
+
+    @Override
+    public CompletableFuture<Bitmap> getAlbum(String musicId) {
+        return AsyncTask.supply(() -> {
+            String url = getItemAlbumUrl(musicId);
+
+            Bitmap bitmap = null;
+            try (HttpResponse response = SignatureUtil.touchHeader(HttpRequest.get(url), token).execute()) {
+                if (response.isOk()) {
+                    bitmap = BitmapFactory.decodeStream(response.bodyStream());
+                }
+            } catch (Exception e) {
+                Log.d(App.App_Name, "[CloudMusicProvider]获取专辑图片失败" + e);
+            }
+            return bitmap;
+        });
+    }
 
     @Override
     public CompletableFuture<List<String>> getItemLyric(String musicId) {

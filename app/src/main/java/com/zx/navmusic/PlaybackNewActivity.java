@@ -30,6 +30,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONWriter;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+import com.bumptech.glide.request.RequestOptions;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.AsyncTask;
 import com.zx.navmusic.common.SeekBarControl;
@@ -43,7 +46,6 @@ import com.zx.navmusic.service.strategy.PlayModeStrategy;
 import com.zx.navmusic.util.LyricParser;
 
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -60,12 +62,9 @@ public class PlaybackNewActivity extends AppCompatActivity {
 
     private ActivityPlaybackNewBinding binding;
 
-    private ObjectAnimator discRotateAnimator;
     private AnimatorSet haloBreathAnimator;
-    private ValueAnimator spectrumAnimator;
 
     private boolean isPlaying = false;
-    private final Random random = new Random();
 
     private RadialGradient haloGradient;
     private ShapeDrawable haloDrawable;
@@ -107,11 +106,9 @@ public class PlaybackNewActivity extends AppCompatActivity {
         );
         binding.rvLyrics.setItemAnimator(null); // 防止高亮闪烁（推荐）
 
-        initDiscRotate();
         initHaloBreath();
         initHaloShader();
         initPlayButtonSpring();
-        initFakeSpectrum();
         initClickEvents();
 
         MusicPlayState musicPlayState = NotifyCenter.getMusicPlayState();
@@ -144,19 +141,28 @@ public class PlaybackNewActivity extends AppCompatActivity {
             setPlayMode(MODE_SHUFFLE);
         }
 
-        binding.tvTitle.setText(musicPlayState.name);
-        binding.tvArtist.setText(musicPlayState.artist);
-        binding.seekProgress.setMax(musicPlayState.duration);
-
-        String musicId = musicPlayState.id;
-        if (!StrUtil.equals(currentMusicId, musicId) && lyricLock.tryLock()) {
-            App.log("开始加载歌词 before={} musicId={}", currentMusicId, musicId);
-            currentMusicId = musicId;
+        if (!StrUtil.equals(currentMusicId, musicPlayState.id) && lyricLock.tryLock()) {
+            currentMusicId = musicPlayState.id;
+            MusicLiveProvider.getInstance().getAlbum(musicPlayState.id)
+                    .whenComplete((album, ex) -> {
+                        if (ex == null && album != null) {
+                            runOnUiThread(() -> {
+                                Glide.with(this)
+                                        .load(album)
+                                        .placeholder(R.drawable.nav_logo)  // 加载中显示的图片
+                                        .error(R.drawable.nav_logo)  // 加载失败显示的图片
+                                        .centerCrop()  // 裁剪方式
+                                        .apply(new RequestOptions()
+                                                .transform(new RoundedCorners(50)))
+                                        .into(binding.ivDisc);
+                            });
+                        }
+                    });
             AsyncTask.run(() -> {
-                CompletableFuture<List<String>> future = MusicLiveProvider.getInstance().getItemLyric(musicId);
+                CompletableFuture<List<String>> future = MusicLiveProvider.getInstance().getItemLyric(currentMusicId);
                 future.whenComplete((c, ex) -> {
                     if (ex == null && c != null) {
-                        getMainExecutor().execute(() -> {
+                        runOnUiThread(() -> {
                             this.lyrics = LyricParser.parseLrc(c);
                             currentLyricIndex = 0;
                             lyricAdapter = new LyricAdapter();
@@ -168,6 +174,10 @@ public class PlaybackNewActivity extends AppCompatActivity {
                 });
             });
         }
+
+        binding.tvTitle.setText(musicPlayState.name);
+        binding.tvArtist.setText(musicPlayState.artist);
+        binding.seekProgress.setMax(musicPlayState.duration);
     }
 
     private void initClickEvents() {
@@ -250,13 +260,6 @@ public class PlaybackNewActivity extends AppCompatActivity {
                 mode == 2 ? R.drawable.playback_bg_mode_active : R.drawable.playback_bg_mode_inactive);
     }
 
-    /* ---------------- 唱片旋转 ---------------- */
-    private void initDiscRotate() {
-        discRotateAnimator = ObjectAnimator.ofFloat(binding.ivDisc, View.ROTATION, 0f, 360f);
-        discRotateAnimator.setDuration(12000);
-        discRotateAnimator.setInterpolator(new LinearInterpolator());
-        discRotateAnimator.setRepeatCount(ValueAnimator.INFINITE);
-    }
 
     /* ---------------- 光环呼吸 ---------------- */
     private void initHaloBreath() {
@@ -312,7 +315,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
     private void togglePlayState() {
         // 图标 Morph（缩放 + 旋转）
         binding.btnPlay.animate()
-                .rotationBy(180f)
+//                .rotationBy(180f)
                 .scaleX(0.7f)
                 .scaleY(0.7f)
                 .setDuration(120)
@@ -326,14 +329,6 @@ public class PlaybackNewActivity extends AppCompatActivity {
                             .start();
                 })
                 .start();
-
-        if (isPlaying) {
-            discRotateAnimator.start();
-            spectrumAnimator.start();
-        } else {
-            discRotateAnimator.pause();
-            spectrumAnimator.cancel();
-        }
     }
 
     /* ---------------- 按压发光回弹（Spring） ---------------- */
@@ -360,17 +355,6 @@ public class PlaybackNewActivity extends AppCompatActivity {
         });
     }
 
-    /* ---------------- 模拟频谱抖动 ---------------- */
-    private void initFakeSpectrum() {
-        spectrumAnimator = ValueAnimator.ofFloat(0f, 1f);
-        spectrumAnimator.setDuration(120);
-        spectrumAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        spectrumAnimator.addUpdateListener(a -> {
-            float energy = 0.9f + random.nextFloat() * 0.3f;
-            binding.ivDisc.setScaleX(energy);
-            binding.ivDisc.setScaleY(energy);
-        });
-    }
 
     @Override
     protected void onDestroy() {
@@ -391,9 +375,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
             }
         }
 
-        discRotateAnimator.cancel();
         haloBreathAnimator.cancel();
-        spectrumAnimator.cancel();
         seekBarControl.pause();
         lyricHandler.removeCallbacksAndMessages(null);
     }

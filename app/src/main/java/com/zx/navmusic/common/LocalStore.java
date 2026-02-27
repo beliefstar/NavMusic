@@ -1,11 +1,15 @@
 package com.zx.navmusic.common;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import com.alibaba.fastjson2.JSON;
 import com.zx.navmusic.common.bean.ConfigDataBean;
 import com.zx.navmusic.common.bean.MusicItem;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -23,6 +27,7 @@ public class LocalStore {
     public static final String DATA_FILE = "repo.data";
     public static final String CONFIG_FILE = "config.data";
     public static final String LYRIC_FILE = "lyrics";
+    public static final String ALBUM_FILE = "album";
 
     public static void loadFile(Context context) {
         File dataDir = context.getDataDir();
@@ -123,6 +128,47 @@ public class LocalStore {
                 lrcFile.createNewFile();
             }
             FileUtil.writeString(content, lrcFile, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            App.toast("文件写入失败 {}", e.getMessage());
+        }
+    }
+
+
+    public static File getAlbumDir(Context ctx) {
+        File root = ctx.getDataDir();
+        File file = new File(root, ALBUM_FILE);
+        FileUtil.mkdir(file);
+        return file;
+    }
+
+    public static Bitmap loadAlbum(Context ctx, String musicId) {
+        File file = getAlbumDir(ctx);
+
+        String main = FileNameUtil.mainName(musicId);
+        File f = new File(file, main + ".jpg");
+
+        if (!f.exists()) {
+            return null;
+        }
+
+        BufferedInputStream in = FileUtil.getInputStream(f);
+        return BitmapFactory.decodeStream(in);
+    }
+
+
+    public static void flushAlbum(Context ctx, String musicId, Bitmap bitmap) {
+        File file = getAlbumDir(ctx);
+
+        String main = FileNameUtil.mainName(musicId);
+        File f = new File(file, main + ".jpg");
+
+        try {
+            if (!f.exists()) {
+                f.createNewFile();
+            }
+            try (BufferedOutputStream out = FileUtil.getOutputStream(f)) {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            }
         } catch (IOException e) {
             App.toast("文件写入失败 {}", e.getMessage());
         }
