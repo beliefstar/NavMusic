@@ -375,10 +375,27 @@ public class PlaybackNewActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        // 清理所有歌词动画
+        if (binding.rvLyrics.getAdapter() != null) {
+            for (int i = 0; i < binding.rvLyrics.getChildCount(); i++) {
+                View view = binding.rvLyrics.getChildAt(i);
+                TextView tv = view.findViewById(R.id.tvLyric);
+                if (tv != null) {
+                    Object animator = tv.getTag(R.id.lyric_gradient_animator);
+                    if (animator instanceof ValueAnimator) {
+                        ((ValueAnimator) animator).cancel();
+                    }
+                    tv.clearAnimation();
+                }
+            }
+        }
+
         discRotateAnimator.cancel();
         haloBreathAnimator.cancel();
         spectrumAnimator.cancel();
         seekBarControl.pause();
+        lyricHandler.removeCallbacksAndMessages(null);
     }
 
     private void startFakeLyricProgress() {
@@ -423,7 +440,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
         int rvHeight = binding.rvLyrics.getHeight();
         int itemHeight = binding.rvLyrics.getChildAt(0) != null
                 ? binding.rvLyrics.getChildAt(0).getHeight()
-                : 0;
+                : 80; // 默认高度
 
         int offset = rvHeight / 2 - itemHeight / 2;
 
@@ -459,9 +476,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
                 // 当前歌词
                 h.tv.setTextColor(Color.parseColor("#00E5FF"));
                 h.tv.setTextSize(20);
-//                h.tv.setAlpha(1f);
-//                h.tv.setScaleX(1.08f);
-//                h.tv.setScaleY(1.08f);
+                h.tv.setAlpha(1f);
 
                 h.tv.animate()
                     .alpha(1f)
@@ -469,6 +484,13 @@ public class PlaybackNewActivity extends AppCompatActivity {
                     .scaleY(1.08f)
                     .setDuration(180)
                     .start();
+
+                // 颜色渐变动画
+                if (h.tv.getWidth() > 0) {
+                    animateTextGradient(h.tv, pos);
+                } else {
+                    h.tv.post(() -> animateTextGradient(h.tv, pos));
+                }
 
             } else {
                 float alpha = Math.max(0.25f, 1f - diff * 0.2f);
@@ -482,6 +504,37 @@ public class PlaybackNewActivity extends AppCompatActivity {
             }
         }
 
+        // 歌词文字渐变动画
+        private void animateTextGradient(TextView textView, int position) {
+            ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+            animator.setDuration(2000);
+            animator.setRepeatCount(ValueAnimator.INFINITE);
+            animator.setRepeatMode(ValueAnimator.REVERSE);
+            animator.addUpdateListener(animation -> {
+                float progress = (float) animation.getAnimatedValue();
+
+                int[] colors = {
+                        Color.HSVToColor(new float[]{(200 + progress * 60) % 360, 0.9f, 1f}),
+                        Color.HSVToColor(new float[]{(260 + progress * 60) % 360, 0.8f, 1f}),
+                        Color.HSVToColor(new float[]{(320 + progress * 60) % 360, 0.9f, 1f})
+                };
+
+                LinearGradient gradient = new LinearGradient(
+                        0, 0, textView.getWidth(), 0,
+                        colors,
+                        new float[]{0f, 0.5f, 1f},
+                        Shader.TileMode.CLAMP
+                );
+
+                textView.getPaint().setShader(gradient);
+                textView.invalidate();
+            });
+
+            // 保存animator引用以便清理
+            textView.setTag(R.id.lyric_gradient_animator, animator);
+            animator.start();
+        }
+
         @Override
         public int getItemCount() {
             return lyrics.size();
@@ -489,9 +542,24 @@ public class PlaybackNewActivity extends AppCompatActivity {
 
         class VH extends RecyclerView.ViewHolder {
             TextView tv;
+
             VH(View v) {
                 super(v);
                 tv = v.findViewById(R.id.tvLyric);
+
+                // 清理动画资源
+                tv.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                    @Override
+                    public void onViewAttachedToWindow(View v) {}
+
+                    @Override
+                    public void onViewDetachedFromWindow(View v) {
+                        Object animator = tv.getTag(R.id.lyric_gradient_animator);
+                        if (animator instanceof ValueAnimator) {
+                            ((ValueAnimator) animator).cancel();
+                        }
+                    }
+                });
             }
         }
     }
