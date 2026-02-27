@@ -6,7 +6,6 @@ import android.util.Log;
 import androidx.fragment.app.FragmentActivity;
 
 import com.alibaba.fastjson2.JSON;
-import com.zx.navmusic.MusicService;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.AsyncTask;
 import com.zx.navmusic.common.LocalAudioStore;
@@ -171,7 +170,6 @@ public class CloudMusicProvider extends MusicLiveProvider {
             if (lyric == null) {
                 return null;
             }
-            App.toast(MusicService.INSTANCE, "从云端加载歌词" + lyric.length());
             return StrUtil.split(lyric, "\n", true, true);
         });
     }

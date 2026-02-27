@@ -63,6 +63,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:overScrollMode="never"
+        android:clipToPadding="false"
         android:scrollbars="none"
         android:paddingTop="24dp"
         android:paddingBottom="24dp"

@@ -184,7 +184,6 @@ public class LocalMusicProvider extends CloudMusicProvider {
     public CompletableFuture<List<String>> getItemLyric(String musicId) {
         String content = LocalStore.loadLyric(MusicService.INSTANCE, musicId);
         if (StrUtil.isNotBlank(content)) {
-            App.toast(MusicService.INSTANCE, "从本地加载歌词" + content.length());
             List<String> lyrics = StrUtil.split(content, "\n", true, true);
             return CompletableFuture.completedFuture(lyrics);
         }

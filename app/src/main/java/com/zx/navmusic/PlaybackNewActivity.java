@@ -5,6 +5,7 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
 import android.graphics.drawable.ShapeDrawable;
@@ -410,7 +411,24 @@ public class PlaybackNewActivity extends AppCompatActivity {
         lyricAdapter.currentIndex = index;
         lyricAdapter.notifyDataSetChanged();
 
-        binding.rvLyrics.smoothScrollToPosition(index);
+        scrollLyricToCenter(index);
+    }
+
+    private void scrollLyricToCenter(int index) {
+        RecyclerView.LayoutManager lm = binding.rvLyrics.getLayoutManager();
+        if (!(lm instanceof LinearLayoutManager)) return;
+
+        LinearLayoutManager llm = (LinearLayoutManager) lm;
+
+        int rvHeight = binding.rvLyrics.getHeight();
+        int itemHeight = binding.rvLyrics.getChildAt(0) != null
+                ? binding.rvLyrics.getChildAt(0).getHeight()
+                : 0;
+
+        int offset = rvHeight / 2 - itemHeight / 2;
+
+        App.log("scrollLyricToCenter index={} rvHeight={} itemHeight={} offset={}", index, rvHeight, itemHeight, offset);
+        llm.scrollToPositionWithOffset(index, offset);
     }
 
     class LyricAdapter extends RecyclerView.Adapter<LyricAdapter.VH> {
@@ -427,17 +445,40 @@ public class PlaybackNewActivity extends AppCompatActivity {
         public void onBindViewHolder(VH h, int pos) {
             h.tv.setText(lyrics.get(pos).text);
 
-//            h.tv.setTextColor(Color.RED);
-//            h.tv.setAlpha(1f);
+            int diff = Math.abs(pos - currentIndex);
 
-            if (pos == currentIndex) {
-                h.tv.setTextColor(Color.parseColor("#00E5FF")); // 霓虹青蓝
-                h.tv.setTextSize(18);
-                h.tv.setAlpha(1f);
+            LinearGradient gradient = new LinearGradient(
+                    0, 0, h.tv.getWidth(), 0,
+                    new int[]{Color.CYAN, Color.MAGENTA},
+                    null,
+                    Shader.TileMode.CLAMP
+            );
+            h.tv.getPaint().setShader(gradient);
+
+            if (diff == 0) {
+                // 当前歌词
+                h.tv.setTextColor(Color.parseColor("#00E5FF"));
+                h.tv.setTextSize(20);
+//                h.tv.setAlpha(1f);
+//                h.tv.setScaleX(1.08f);
+//                h.tv.setScaleY(1.08f);
+
+                h.tv.animate()
+                    .alpha(1f)
+                    .scaleX(1.08f)
+                    .scaleY(1.08f)
+                    .setDuration(180)
+                    .start();
+
             } else {
-                h.tv.setTextColor(Color.parseColor("#66FFFFFF"));
+                float alpha = Math.max(0.25f, 1f - diff * 0.2f);
+                float scale = Math.max(0.9f, 1f - diff * 0.05f);
+
+                h.tv.setTextColor(Color.parseColor("#88FFFFFF"));
                 h.tv.setTextSize(16);
-                h.tv.setAlpha(0.6f);
+                h.tv.setAlpha(alpha);
+                h.tv.setScaleX(scale);
+                h.tv.setScaleY(scale);
             }
         }
 
