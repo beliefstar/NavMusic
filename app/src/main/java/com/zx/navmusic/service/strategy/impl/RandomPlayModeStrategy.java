@@ -49,7 +49,7 @@ public class RandomPlayModeStrategy extends AbsPlayModeStrategy {
 
             MusicItem item = items.get(i);
             FavoriteLevel.LevelInfo level = FavoriteLevel.fromScore(item.score);
-            int num = level.level * step;
+            int num = level.level + step;
 
             for (int t = num; t > 0; t--) {
                 list.add(i);

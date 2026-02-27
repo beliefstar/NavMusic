@@ -76,7 +76,7 @@ public class MusicPlayer {
     }
 
     public void seekTo(int progress) {
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+        if (mediaPlayer != null && isReady()) {
             mediaPlayer.seekTo(progress);
         }
     }

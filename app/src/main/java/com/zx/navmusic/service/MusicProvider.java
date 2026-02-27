@@ -30,6 +30,10 @@ public interface MusicProvider {
 
     String getItemRemoteUrl(MusicItem mi);
 
+    String getItemAlbumUrl(String musicId);
+
+    CompletableFuture<List<String>> getItemLyric(String musicId);
+
     CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchItem si);
 
     void remove(int position);

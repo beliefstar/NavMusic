@@ -180,6 +180,26 @@ public class LocalMusicProvider extends CloudMusicProvider {
         });
     }
 
+    @Override
+    public CompletableFuture<List<String>> getItemLyric(String musicId) {
+        String content = LocalStore.loadLyric(MusicService.INSTANCE, musicId);
+        if (StrUtil.isNotBlank(content)) {
+            App.toast(MusicService.INSTANCE, "从本地加载歌词" + content.length());
+            List<String> lyrics = StrUtil.split(content, "\n", true, true);
+            return CompletableFuture.completedFuture(lyrics);
+        }
+
+        CompletableFuture<List<String>> future = super.getItemLyric(musicId);
+
+        future.whenComplete((r, e) -> {
+            if (e == null && r != null) {
+                App.log("从云端加载歌词成功，准备保存到本地");
+                LocalStore.flushLyric(MusicService.INSTANCE, musicId, String.join("\n", r));
+            }
+        });
+        return future;
+    }
+
     private MusicItem addItem(SearchItem si) {
         MusicItem mi = new MusicItem(si.id, si.name, false);
 

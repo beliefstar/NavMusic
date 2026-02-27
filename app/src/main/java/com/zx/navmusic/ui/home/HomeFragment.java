@@ -33,6 +33,7 @@ import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.event.NotifyListener;
 import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.MusicPlayState;
+import com.zx.navmusic.service.MusicProvider;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
 import com.zx.navmusic.ui.UIFragment;
 
@@ -102,6 +103,15 @@ public class HomeFragment extends Fragment implements NotifyListener {
         if (playState == null) {
             return;
         }
+
+        MusicProvider provider = MusicLiveProvider.getInstance();
+        // 带占位符和错误图
+        Glide.with(this)
+                .load(provider.getItemAlbumUrl(playState.id))
+                .placeholder(R.drawable.nav_logo)  // 加载中显示的图片
+                .error(R.drawable.nav_logo)  // 加载失败显示的图片
+                .centerCrop()  // 裁剪方式
+                .into(binding.ivAlbum);
 
         String fullText = playState.name + " - " + playState.artist;
         SpannableString spannableString = new SpannableString(fullText);

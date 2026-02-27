@@ -10,26 +10,41 @@ import android.graphics.Shader;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.OvalShape;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONWriter;
+import com.zx.navmusic.common.App;
+import com.zx.navmusic.common.AsyncTask;
 import com.zx.navmusic.common.SeekBarControl;
+import com.zx.navmusic.common.bean.LyricLine;
 import com.zx.navmusic.databinding.ActivityPlaybackNewBinding;
 import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.event.NotifyListener;
+import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.MusicPlayState;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
+import com.zx.navmusic.util.LyricParser;
 
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -68,6 +83,13 @@ public class PlaybackNewActivity extends AppCompatActivity {
         }
     };
 
+    private int currentLyricIndex = 0;
+    private String currentMusicId = null;
+    private ReentrantLock lyricLock = new ReentrantLock();
+    private Handler lyricHandler = new Handler(Looper.getMainLooper());
+    private List<LyricLine> lyrics;
+    private LyricAdapter lyricAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,6 +100,11 @@ public class PlaybackNewActivity extends AppCompatActivity {
         if (actionBar != null) {
             actionBar.hide();
         }
+
+        binding.rvLyrics.setLayoutManager(
+                new LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        );
+        binding.rvLyrics.setItemAnimator(null); // 防止高亮闪烁（推荐）
 
         initDiscRotate();
         initHaloBreath();
@@ -92,6 +119,8 @@ public class PlaybackNewActivity extends AppCompatActivity {
         NotifyCenter.registerListener(notifyListener);
         seekBarControl = new SeekBarControl(binding.seekProgress);
         seekBarControl.start();
+
+        startFakeLyricProgress();
     }
 
     private void render(MusicPlayState musicPlayState) {
@@ -114,10 +143,30 @@ public class PlaybackNewActivity extends AppCompatActivity {
             setPlayMode(MODE_SHUFFLE);
         }
 
-        binding.tvTitle.setText(
-                StrUtil.format("{}-{}", musicPlayState.name, musicPlayState.artist));
-
+        binding.tvTitle.setText(musicPlayState.name);
+        binding.tvArtist.setText(musicPlayState.artist);
         binding.seekProgress.setMax(musicPlayState.duration);
+
+        String musicId = musicPlayState.id;
+        if (!StrUtil.equals(currentMusicId, musicId) && lyricLock.tryLock()) {
+            App.log("开始加载歌词 before={} musicId={}", currentMusicId, musicId);
+            currentMusicId = musicId;
+            AsyncTask.run(() -> {
+                CompletableFuture<List<String>> future = MusicLiveProvider.getInstance().getItemLyric(musicId);
+                future.whenComplete((c, ex) -> {
+                    if (ex == null && c != null) {
+                        getMainExecutor().execute(() -> {
+                            this.lyrics = LyricParser.parseLrc(c);
+                            currentLyricIndex = 0;
+                            lyricAdapter = new LyricAdapter();
+                            binding.rvLyrics.setAdapter(lyricAdapter);
+                            binding.rvLyrics.bringToFront();
+                        });
+                    }
+                    lyricLock.unlock();
+                });
+            });
+        }
     }
 
     private void initClickEvents() {
@@ -329,5 +378,80 @@ public class PlaybackNewActivity extends AppCompatActivity {
         haloBreathAnimator.cancel();
         spectrumAnimator.cancel();
         seekBarControl.pause();
+    }
+
+    private void startFakeLyricProgress() {
+        lyricHandler.postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+                int seek = MusicService.INSTANCE.getCurrentSeek();
+                updateLyricByTime(seek);
+                lyricHandler.postDelayed(this, 500);
+            }
+        }, 500);
+    }
+
+    private void updateLyricByTime(long timeMs) {
+        if (lyrics == null || lyrics.isEmpty()) return;
+
+        for (int i = 0; i < lyrics.size(); i++) {
+            if (timeMs < lyrics.get(i).timeMs) {
+                setCurrentLyric(Math.max(0, i - 1));
+                return;
+            }
+        }
+    }
+
+    private void setCurrentLyric(int index) {
+        if (index == currentLyricIndex) return;
+
+        currentLyricIndex = index;
+        lyricAdapter.currentIndex = index;
+        lyricAdapter.notifyDataSetChanged();
+
+        binding.rvLyrics.smoothScrollToPosition(index);
+    }
+
+    class LyricAdapter extends RecyclerView.Adapter<LyricAdapter.VH> {
+        int currentIndex = 0;
+
+        @Override
+        public VH onCreateViewHolder(ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_lyric, parent, false);
+            return new VH(v);
+        }
+
+        @Override
+        public void onBindViewHolder(VH h, int pos) {
+            h.tv.setText(lyrics.get(pos).text);
+
+//            h.tv.setTextColor(Color.RED);
+//            h.tv.setAlpha(1f);
+
+            if (pos == currentIndex) {
+                h.tv.setTextColor(Color.parseColor("#00E5FF")); // 霓虹青蓝
+                h.tv.setTextSize(18);
+                h.tv.setAlpha(1f);
+            } else {
+                h.tv.setTextColor(Color.parseColor("#66FFFFFF"));
+                h.tv.setTextSize(16);
+                h.tv.setAlpha(0.6f);
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return lyrics.size();
+        }
+
+        class VH extends RecyclerView.ViewHolder {
+            TextView tv;
+            VH(View v) {
+                super(v);
+                tv = v.findViewById(R.id.tvLyric);
+            }
+        }
     }
 }

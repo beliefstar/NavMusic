@@ -6,6 +6,7 @@ import android.util.Log;
 import androidx.fragment.app.FragmentActivity;
 
 import com.alibaba.fastjson2.JSON;
+import com.zx.navmusic.MusicService;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.AsyncTask;
 import com.zx.navmusic.common.LocalAudioStore;
@@ -34,6 +35,7 @@ public class CloudMusicProvider extends MusicLiveProvider {
 
     public static final String HOST = "http://154.12.55.187:8080";
     public static final String PLAY_URL = "/api/music/resource/";
+    public static final String ALBUM_URL = "/api/v2/album/image";
 
     public static final String API_GET_LIST = "/api/music/list";
     public static final String API_SEARCH = "/api/v2/music/search";
@@ -41,6 +43,8 @@ public class CloudMusicProvider extends MusicLiveProvider {
     public static final String API_UPLOAD = "/api/v2/music/upload/";
 
     public static final String API_UNLOCK = "/api/ip/unlock";
+
+    public static final String API_LYRIC = "/api/v2/lyric";
 
     public static final String SERVICE_BUSY = "service_busy";
     public static final String SERVICE_ERROR = "service_error";
@@ -92,6 +96,11 @@ public class CloudMusicProvider extends MusicLiveProvider {
     @Override
     public String getItemRemoteUrl(MusicItem musicItem) {
         return getItemRemoteUrl(musicItem.id);
+    }
+
+    @Override
+    public String getItemAlbumUrl(String musicId) {
+        return SignatureUtil.buildUrl(HOST + ALBUM_URL + "?musicId=" + musicId, token);
     }
 
     protected String getItemRemoteUrl(String id) {
@@ -146,6 +155,25 @@ public class CloudMusicProvider extends MusicLiveProvider {
     @Override
     public void init(Context ctx) {
         doRefresh();
+    }
+
+
+    @Override
+    public CompletableFuture<List<String>> getItemLyric(String musicId) {
+        return AsyncTask.supply(() -> {
+            String url = StrUtil.format("{}?musicId={}", HOST + API_LYRIC, musicId);
+            String lyric = null;
+            try {
+                lyric = executeHttp(HttpRequest.get(url), body -> body, null);
+            } catch (Exception e) {
+                Log.d(App.App_Name, "[CloudMusicProvider]获取歌词失败" + e);
+            }
+            if (lyric == null) {
+                return null;
+            }
+            App.toast(MusicService.INSTANCE, "从云端加载歌词" + lyric.length());
+            return StrUtil.split(lyric, "\n", true, true);
+        });
     }
 
     public void unlock() {
