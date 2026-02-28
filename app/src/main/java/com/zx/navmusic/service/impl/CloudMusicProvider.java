@@ -37,6 +37,8 @@ public class CloudMusicProvider extends MusicLiveProvider {
     public static final String HOST = "http://154.12.55.187:8080";
     public static final String PLAY_URL = "/api/music/resource/";
     public static final String ALBUM_URL = "/api/v2/album/image";
+    public static final String ALBUM_NAME_URL = "/api/v2/album/name";
+    public static final String API_LYRIC = "/api/v2/lyric";
 
     public static final String API_GET_LIST = "/api/music/list";
     public static final String API_SEARCH = "/api/v2/music/search";
@@ -45,7 +47,6 @@ public class CloudMusicProvider extends MusicLiveProvider {
 
     public static final String API_UNLOCK = "/api/ip/unlock";
 
-    public static final String API_LYRIC = "/api/v2/lyric";
 
     public static final String SERVICE_BUSY = "service_busy";
     public static final String SERVICE_ERROR = "service_error";
@@ -92,6 +93,23 @@ public class CloudMusicProvider extends MusicLiveProvider {
             return null;
         }
         return mi;
+    }
+
+    @Override
+    public MusicItem getItem(String musicId) {
+        if (StrUtil.isBlank(musicId)) {
+            return null;
+        }
+        List<MusicItem> musicItems = getValue();
+        if (musicItems == null) {
+            return null;
+        }
+        for (int i = 0; i < musicItems.size(); i++) {
+            if (musicItems.get(i).id.equals(musicId)) {
+                return musicItems.get(i);
+            }
+        }
+        return null;
     }
 
     @Override
@@ -158,6 +176,16 @@ public class CloudMusicProvider extends MusicLiveProvider {
         doRefresh();
     }
 
+    @Override
+    public String getAlbumName(String musicId) {
+        String url = StrUtil.format("{}?musicId={}", HOST + ALBUM_NAME_URL, musicId);
+        try {
+            return executeHttp(HttpRequest.get(url), body -> body, null);
+        } catch (Exception e) {
+            Log.d(App.App_Name, "[CloudMusicProvider]获取专辑名称失败" + e);
+        }
+        return "";
+    }
 
     @Override
     public Bitmap getAlbum(String musicId) {

@@ -8,6 +8,8 @@ public class MusicPlayState {
 
     public String artist;
 
+    public String album;
+
     public boolean isPlaying;
 
     public int playSwitchStrategy;

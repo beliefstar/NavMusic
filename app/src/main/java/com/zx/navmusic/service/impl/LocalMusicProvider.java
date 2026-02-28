@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.collection.CollUtil;
@@ -54,6 +55,7 @@ import cn.hutool.http.HttpUtil;
 
 public class LocalMusicProvider extends CloudMusicProvider {
 
+    private final ReentrantLock albumNameLock = new ReentrantLock();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private final Runnable storeTask = new Runnable() {
@@ -207,6 +209,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
     public Bitmap getAlbum(String musicId) {
         Bitmap bitmap = LocalStore.loadAlbum(MusicService.INSTANCE, musicId);
         if (bitmap != null) {
+            getAlbumName(musicId);
             return bitmap;
         }
 
@@ -217,9 +220,39 @@ public class LocalMusicProvider extends CloudMusicProvider {
                 App.log("从云端加载专辑图片成功，准备保存到本地");
                 LocalStore.flushAlbum(MusicService.INSTANCE, musicId, b);
                 MusicService.INSTANCE.triggerMusicStateChange();
+
+                getAlbumName(musicId);
             }
         });
         return BitmapFactory.decodeResource(MusicService.INSTANCE.getResources(), com.zx.navmusic.R.drawable.nav_logo);
+    }
+
+    @Override
+    public String getAlbumName(String musicId) {
+        MusicItem mi = getItem(musicId);
+        if (mi == null) {
+            return null;
+        }
+        if (StrUtil.isNotBlank(mi.album)) {
+            return mi.album;
+        }
+
+        AsyncTask.run(() -> {
+            if (albumNameLock.tryLock()) {
+                if (StrUtil.isNotBlank(mi.album)) {
+                    return;
+                }
+                App.log("本地没有专辑名称，准备从云端加载");
+                String album = super.getAlbumName(musicId);
+                if (StrUtil.isNotBlank(album)) {
+                    App.log("从云端加载专辑名称成功，准备保存到本地");
+                    mi.album = album;
+                    MusicService.INSTANCE.triggerMusicStateChange();
+                }
+                albumNameLock.unlock();
+            }
+        });
+        return null;
     }
 
     private MusicItem addItem(SearchItem si) {

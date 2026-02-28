@@ -289,6 +289,7 @@ public class MusicService extends Service {
         if (item != null) {
             musicPlayState.id = item.id;
             musicPlayState.name = item.name;
+            musicPlayState.album = item.album;
             Util.parsePlayState(musicPlayState);
         }
         if (musicPlayer.isReady()) {
@@ -371,15 +372,21 @@ public class MusicService extends Service {
 
     private void updateMediaSession(MusicPlayState musicPlayState) {
         mediaSession.setMetadata(new MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, musicPlayState.artist)
-//                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, getAlbumArtistName())
-                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, "")
+                .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, musicPlayState.id)
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, musicPlayState.name)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, musicPlayState.artist)
+                // 专辑名称
+                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, musicPlayState.album)
+                // 专辑封面
+                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, getMusicProvider().getAlbum(musicPlayState.id))
+                // 时长
                 .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, musicPlayState.duration)
+                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, "[00:00.00]DISPLAY_DESCRIPTION")
+                .putString("android.media.metadata.LYRICS", "[00:00.00]LYRICS")
+//                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, getAlbumArtistName())
 //                .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, getQueuePosition() + 1)
 //                .putLong(MediaMetadataCompat.METADATA_KEY_NUM_TRACKS, getQueue().length)
 //                .putString(MediaMetadataCompat.METADATA_KEY_GENRE, getGenreName())
-//                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, albumArt)
                 .build());
 
         int state = musicPlayState.isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;

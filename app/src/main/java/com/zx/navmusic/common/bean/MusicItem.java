@@ -10,6 +10,8 @@ public class MusicItem {
 
     public String name;
 
+    public String album;
+
     public Boolean cache;
 
     public Integer score = 0;
