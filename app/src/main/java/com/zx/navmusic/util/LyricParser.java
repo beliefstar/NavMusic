@@ -9,9 +9,15 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import cn.hutool.core.collection.CollUtil;
+
 public class LyricParser {
 
     public static List<LyricLine> parseLrc(List<String> lines) {
+        if (CollUtil.isEmpty(lines)) {
+            lines = new ArrayList<>(Collections.singletonList("[00:00.00]当前没有歌词"));
+        }
+
         List<LyricLine> result = new ArrayList<>();
 
         for (String line : lines) {

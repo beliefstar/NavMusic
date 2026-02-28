@@ -4,6 +4,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.RadialGradient;
@@ -46,6 +47,7 @@ import com.zx.navmusic.util.LyricParser;
 
 import java.util.List;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 
 /**
@@ -123,8 +125,10 @@ public class PlaybackNewActivity extends AppCompatActivity {
 
         System.out.println("===>: " + JSON.toJSONString(musicPlayState, JSONWriter.Feature.PrettyFormat));
 
-        isPlaying = musicPlayState.isPlaying;
-        togglePlayState();
+        if (isPlaying != musicPlayState.isPlaying) {
+            isPlaying = musicPlayState.isPlaying;
+            togglePlayState();
+        }
 
         if (musicPlayState.playSwitchStrategy == PlayModeStrategy.LINEAR) {
             setPlayMode(MODE_ORDER);
@@ -136,18 +140,37 @@ public class PlaybackNewActivity extends AppCompatActivity {
             setPlayMode(MODE_SHUFFLE);
         }
 
-        Glide.with(this)
-                .load(MusicLiveProvider.getInstance().getAlbum(musicPlayState.id))
-                .placeholder(R.drawable.nav_logo)  // 加载中显示的图片
-                .error(R.drawable.nav_logo)  // 加载失败显示的图片
-                .centerCrop()  // 裁剪方式
-                .apply(new RequestOptions()
-                        .transform(new RoundedCorners(50)))
-                .into(binding.ivDisc);
+        if (binding.ivDisc.getTag(R.id.iv_disc_res_id) == null
+                || !StrUtil.equals(binding.ivDisc.getTag(R.id.iv_disc_res_id).toString(), musicPlayState.id)) {
+            // 不同歌曲，刷新封面
+            Bitmap album = MusicLiveProvider.getInstance().getAlbum(musicPlayState.id);
 
-        List<LyricLine> lyricLines = LyricParser.parseLrc(MusicLiveProvider.getInstance().getItemLyric(musicPlayState.id));
-        lyricAdapter.changeData(lyricLines);
-        binding.rvLyrics.bringToFront();
+            Glide.with(this)
+                    .load(album)
+                    .placeholder(R.drawable.nav_logo)  // 加载中显示的图片
+                    .error(R.drawable.nav_logo)  // 加载失败显示的图片
+                    .centerCrop()  // 裁剪方式
+                    .apply(new RequestOptions()
+                            .transform(new RoundedCorners(50)))
+                    .into(binding.ivDisc);
+
+            if (album != null) {
+                binding.ivDisc.setTag(R.id.iv_disc_res_id, musicPlayState.id);
+            }
+        }
+
+        if (binding.rvLyrics.getTag(R.id.rv_lyric_res_id) == null
+                || !StrUtil.equals(binding.rvLyrics.getTag(R.id.rv_lyric_res_id).toString(), musicPlayState.id)) {
+
+            List<String> lyric = MusicLiveProvider.getInstance().getItemLyric(musicPlayState.id);
+            List<LyricLine> lyricLines = LyricParser.parseLrc(lyric);
+            lyricAdapter.changeData(lyricLines);
+            binding.rvLyrics.bringToFront();
+
+            if (CollUtil.isNotEmpty(lyric)) {
+                binding.rvLyrics.setTag(R.id.rv_lyric_res_id, musicPlayState.id);
+            }
+        }
 
         binding.tvTitle.setText(musicPlayState.name);
         binding.tvArtist.setText(musicPlayState.artist);

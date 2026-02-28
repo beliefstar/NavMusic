@@ -2,7 +2,6 @@ package com.zx.navmusic.service.impl;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -31,7 +30,6 @@ import org.jsoup.select.Elements;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -202,7 +200,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
                 MusicService.INSTANCE.triggerMusicStateChange();
             }
         });
-        return Collections.singletonList("[00:00.00]当前没有歌词");
+        return null;
     }
 
     @Override
@@ -224,7 +222,8 @@ public class LocalMusicProvider extends CloudMusicProvider {
                 getAlbumName(musicId);
             }
         });
-        return BitmapFactory.decodeResource(MusicService.INSTANCE.getResources(), com.zx.navmusic.R.drawable.nav_logo);
+//        return BitmapFactory.decodeResource(MusicService.INSTANCE.getResources(), com.zx.navmusic.R.drawable.nav_logo);
+        return null;
     }
 
     @Override

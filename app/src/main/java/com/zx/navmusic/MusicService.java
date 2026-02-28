@@ -17,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.graphics.drawable.Icon;
 import android.media.AudioManager;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -388,6 +389,10 @@ public class MusicService extends Service {
 //                .putLong(MediaMetadataCompat.METADATA_KEY_NUM_TRACKS, getQueue().length)
 //                .putString(MediaMetadataCompat.METADATA_KEY_GENRE, getGenreName())
                 .build());
+
+        Bundle bundle = new Bundle();
+        bundle.putString("lyrics", "[00:00.00]Bundle_lrc");
+        mediaSession.setExtras(bundle);
 
         int state = musicPlayState.isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
 
