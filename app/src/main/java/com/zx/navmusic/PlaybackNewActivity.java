@@ -34,7 +34,6 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.bumptech.glide.request.RequestOptions;
 import com.zx.navmusic.common.App;
-import com.zx.navmusic.common.AsyncTask;
 import com.zx.navmusic.common.SeekBarControl;
 import com.zx.navmusic.common.bean.LyricLine;
 import com.zx.navmusic.databinding.ActivityPlaybackNewBinding;
@@ -46,8 +45,6 @@ import com.zx.navmusic.service.strategy.PlayModeStrategy;
 import com.zx.navmusic.util.LyricParser;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.ReentrantLock;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -79,15 +76,11 @@ public class PlaybackNewActivity extends AppCompatActivity {
     private final NotifyListener notifyListener = new NotifyListener() {
         @Override
         public void onMusicStateChange(MusicPlayState playState) {
-            render(playState);
+            runOnUiThread(() -> render(playState));
         }
     };
 
-    private int currentLyricIndex = 0;
-    private String currentMusicId = null;
-    private ReentrantLock lyricLock = new ReentrantLock();
     private Handler lyricHandler = new Handler(Looper.getMainLooper());
-    private List<LyricLine> lyrics;
     private LyricAdapter lyricAdapter;
 
     @Override
@@ -101,10 +94,12 @@ public class PlaybackNewActivity extends AppCompatActivity {
             actionBar.hide();
         }
 
+        lyricAdapter = new LyricAdapter();
         binding.rvLyrics.setLayoutManager(
                 new LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         );
         binding.rvLyrics.setItemAnimator(null); // 防止高亮闪烁（推荐）
+        binding.rvLyrics.setAdapter(lyricAdapter);
 
         initHaloBreath();
         initHaloShader();
@@ -141,39 +136,18 @@ public class PlaybackNewActivity extends AppCompatActivity {
             setPlayMode(MODE_SHUFFLE);
         }
 
-        if (!StrUtil.equals(currentMusicId, musicPlayState.id) && lyricLock.tryLock()) {
-            currentMusicId = musicPlayState.id;
-            MusicLiveProvider.getInstance().getAlbum(musicPlayState.id)
-                    .whenComplete((album, ex) -> {
-                        if (ex == null && album != null) {
-                            runOnUiThread(() -> {
-                                Glide.with(this)
-                                        .load(album)
-                                        .placeholder(R.drawable.nav_logo)  // 加载中显示的图片
-                                        .error(R.drawable.nav_logo)  // 加载失败显示的图片
-                                        .centerCrop()  // 裁剪方式
-                                        .apply(new RequestOptions()
-                                                .transform(new RoundedCorners(50)))
-                                        .into(binding.ivDisc);
-                            });
-                        }
-                    });
-            AsyncTask.run(() -> {
-                CompletableFuture<List<String>> future = MusicLiveProvider.getInstance().getItemLyric(currentMusicId);
-                future.whenComplete((c, ex) -> {
-                    if (ex == null && c != null) {
-                        runOnUiThread(() -> {
-                            this.lyrics = LyricParser.parseLrc(c);
-                            currentLyricIndex = 0;
-                            lyricAdapter = new LyricAdapter();
-                            binding.rvLyrics.setAdapter(lyricAdapter);
-                            binding.rvLyrics.bringToFront();
-                        });
-                    }
-                    lyricLock.unlock();
-                });
-            });
-        }
+        Glide.with(this)
+                .load(MusicLiveProvider.getInstance().getAlbum(musicPlayState.id))
+                .placeholder(R.drawable.nav_logo)  // 加载中显示的图片
+                .error(R.drawable.nav_logo)  // 加载失败显示的图片
+                .centerCrop()  // 裁剪方式
+                .apply(new RequestOptions()
+                        .transform(new RoundedCorners(50)))
+                .into(binding.ivDisc);
+
+        List<LyricLine> lyricLines = LyricParser.parseLrc(MusicLiveProvider.getInstance().getItemLyric(musicPlayState.id));
+        lyricAdapter.changeData(lyricLines);
+        binding.rvLyrics.bringToFront();
 
         binding.tvTitle.setText(musicPlayState.name);
         binding.tvArtist.setText(musicPlayState.artist);
@@ -375,6 +349,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
             }
         }
 
+        NotifyCenter.unregisterListener(notifyListener);
         haloBreathAnimator.cancel();
         seekBarControl.pause();
         lyricHandler.removeCallbacksAndMessages(null);
@@ -393,24 +368,9 @@ public class PlaybackNewActivity extends AppCompatActivity {
     }
 
     private void updateLyricByTime(long timeMs) {
-        if (lyrics == null || lyrics.isEmpty()) return;
-
-        for (int i = 0; i < lyrics.size(); i++) {
-            if (timeMs < lyrics.get(i).timeMs) {
-                setCurrentLyric(Math.max(0, i - 1));
-                return;
-            }
+        if (lyricAdapter.updateLyricByTime(timeMs)) {
+            scrollLyricToCenter(lyricAdapter.currentIndex);
         }
-    }
-
-    private void setCurrentLyric(int index) {
-        if (index == currentLyricIndex) return;
-
-        currentLyricIndex = index;
-        lyricAdapter.currentIndex = index;
-        lyricAdapter.notifyDataSetChanged();
-
-        scrollLyricToCenter(index);
     }
 
     private void scrollLyricToCenter(int index) {
@@ -432,12 +392,43 @@ public class PlaybackNewActivity extends AppCompatActivity {
 
     class LyricAdapter extends RecyclerView.Adapter<LyricAdapter.VH> {
         int currentIndex = 0;
+        private List<LyricLine> lyrics;
+        private String signature = "";
 
         @Override
         public VH onCreateViewHolder(ViewGroup parent, int viewType) {
             View v = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_lyric, parent, false);
             return new VH(v);
+        }
+
+        private boolean updateLyricByTime(long timeMs) {
+            if (lyrics == null || lyrics.isEmpty()) return false;
+
+            for (int i = 0; i < lyrics.size(); i++) {
+                if (timeMs < lyrics.get(i).timeMs) {
+                    changeCurrentIndex(Math.max(0, i - 1));
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void changeData(List<LyricLine> newLyrics) {
+            String s = JSON.toJSONString(newLyrics);
+            if (StrUtil.equals(s, signature)) {
+                return;
+            }
+            signature = s;
+            this.lyrics = newLyrics;
+            notifyDataSetChanged();
+        }
+
+        public void changeCurrentIndex(int newIndex) {
+            if (currentIndex == newIndex) return;
+
+            currentIndex = newIndex;
+            notifyDataSetChanged();
         }
 
         @Override

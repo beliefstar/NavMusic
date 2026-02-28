@@ -160,37 +160,33 @@ public class CloudMusicProvider extends MusicLiveProvider {
 
 
     @Override
-    public CompletableFuture<Bitmap> getAlbum(String musicId) {
-        return AsyncTask.supply(() -> {
-            String url = getItemAlbumUrl(musicId);
+    public Bitmap getAlbum(String musicId) {
+        String url = getItemAlbumUrl(musicId);
 
-            Bitmap bitmap = null;
-            try (HttpResponse response = SignatureUtil.touchHeader(HttpRequest.get(url), token).execute()) {
-                if (response.isOk()) {
-                    bitmap = BitmapFactory.decodeStream(response.bodyStream());
-                }
-            } catch (Exception e) {
-                Log.d(App.App_Name, "[CloudMusicProvider]获取专辑图片失败" + e);
+        Bitmap bitmap = null;
+        try (HttpResponse response = SignatureUtil.touchHeader(HttpRequest.get(url), token).execute()) {
+            if (response.isOk()) {
+                bitmap = BitmapFactory.decodeStream(response.bodyStream());
             }
-            return bitmap;
-        });
+        } catch (Exception e) {
+            Log.d(App.App_Name, "[CloudMusicProvider]获取专辑图片失败" + e);
+        }
+        return bitmap;
     }
 
     @Override
-    public CompletableFuture<List<String>> getItemLyric(String musicId) {
-        return AsyncTask.supply(() -> {
-            String url = StrUtil.format("{}?musicId={}", HOST + API_LYRIC, musicId);
-            String lyric = null;
-            try {
-                lyric = executeHttp(HttpRequest.get(url), body -> body, null);
-            } catch (Exception e) {
-                Log.d(App.App_Name, "[CloudMusicProvider]获取歌词失败" + e);
-            }
-            if (lyric == null) {
-                return null;
-            }
-            return StrUtil.split(lyric, "\n", true, true);
-        });
+    public List<String> getItemLyric(String musicId) {
+        String url = StrUtil.format("{}?musicId={}", HOST + API_LYRIC, musicId);
+        String lyric = null;
+        try {
+            lyric = executeHttp(HttpRequest.get(url), body -> body, null);
+        } catch (Exception e) {
+            Log.d(App.App_Name, "[CloudMusicProvider]获取歌词失败" + e);
+        }
+        if (lyric == null) {
+            return null;
+        }
+        return StrUtil.split(lyric, "\n", true, true);
     }
 
     public void unlock() {

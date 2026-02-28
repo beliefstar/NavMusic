@@ -152,6 +152,10 @@ public class MusicService extends Service {
         return START_NOT_STICKY;
     }
 
+    public void triggerMusicStateChange() {
+        NotifyCenter.onMusicStateChange(buildMusicPlayState());
+    }
+
     private void handleAction(Intent intent) {
         if (intent == null) {
             return;

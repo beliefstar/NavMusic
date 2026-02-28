@@ -2,6 +2,7 @@ package com.zx.navmusic.service.impl;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -30,12 +31,14 @@ import org.jsoup.select.Elements;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import cn.hutool.core.codec.Base64;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.io.StreamProgress;
 import cn.hutool.core.util.NumberUtil;
@@ -182,40 +185,41 @@ public class LocalMusicProvider extends CloudMusicProvider {
     }
 
     @Override
-    public CompletableFuture<List<String>> getItemLyric(String musicId) {
+    public List<String> getItemLyric(String musicId) {
         String content = LocalStore.loadLyric(MusicService.INSTANCE, musicId);
         if (StrUtil.isNotBlank(content)) {
-            List<String> lyrics = StrUtil.split(content, "\n", true, true);
-            return CompletableFuture.completedFuture(lyrics);
+            return StrUtil.split(content, "\n", true, true);
         }
 
-        CompletableFuture<List<String>> future = super.getItemLyric(musicId);
-
-        future.whenComplete((r, e) -> {
-            if (e == null && r != null) {
+        AsyncTask.run(() -> {
+            App.log("本地没有歌词，准备从云端加载");
+            List<String> lyrics = super.getItemLyric(musicId);
+            if (CollUtil.isNotEmpty(lyrics)) {
                 App.log("从云端加载歌词成功，准备保存到本地");
-                LocalStore.flushLyric(MusicService.INSTANCE, musicId, String.join("\n", r));
+                LocalStore.flushLyric(MusicService.INSTANCE, musicId, String.join("\n", lyrics));
+                MusicService.INSTANCE.triggerMusicStateChange();
             }
         });
-        return future;
+        return Collections.singletonList("[00:00.00]当前没有歌词");
     }
 
     @Override
-    public CompletableFuture<Bitmap> getAlbum(String musicId) {
+    public Bitmap getAlbum(String musicId) {
         Bitmap bitmap = LocalStore.loadAlbum(MusicService.INSTANCE, musicId);
         if (bitmap != null) {
-            return CompletableFuture.completedFuture(bitmap);
+            return bitmap;
         }
 
-        CompletableFuture<Bitmap> future = super.getAlbum(musicId);
-
-        future.whenComplete((r, e) -> {
-            if (e == null && r != null) {
+        AsyncTask.run(() -> {
+            App.log("本地没有专辑图片，准备从云端加载");
+            Bitmap b = super.getAlbum(musicId);
+            if (b != null) {
                 App.log("从云端加载专辑图片成功，准备保存到本地");
-                LocalStore.flushAlbum(MusicService.INSTANCE, musicId, r);
+                LocalStore.flushAlbum(MusicService.INSTANCE, musicId, b);
+                MusicService.INSTANCE.triggerMusicStateChange();
             }
         });
-        return future;
+        return BitmapFactory.decodeResource(MusicService.INSTANCE.getResources(), com.zx.navmusic.R.drawable.nav_logo);
     }
 
     private MusicItem addItem(SearchItem si) {

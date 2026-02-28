@@ -33,9 +33,9 @@ public interface MusicProvider {
 
     String getItemAlbumUrl(String musicId);
 
-    CompletableFuture<List<String>> getItemLyric(String musicId);
+    List<String> getItemLyric(String musicId);
 
-    CompletableFuture<Bitmap> getAlbum(String musicId);
+    Bitmap getAlbum(String musicId);
 
     CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchItem si);
 
