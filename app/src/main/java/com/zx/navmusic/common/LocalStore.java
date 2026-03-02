@@ -151,6 +151,11 @@ public class LocalStore {
             return null;
         }
 
+        if (f.length() == 0 || f.length() == 3867) {
+            FileUtil.del(f);
+            return null;
+        }
+
         BufferedInputStream in = FileUtil.getInputStream(f);
         return BitmapFactory.decodeStream(in);
     }

@@ -1,4 +1,4 @@
-package com.zx.navmusic.util;
+package com.zx.navmusic.lyric;
 
 import com.zx.navmusic.common.bean.LyricLine;
 
@@ -13,12 +13,18 @@ import cn.hutool.core.collection.CollUtil;
 
 public class LyricParser {
 
-    public static List<LyricLine> parseLrc(List<String> lines) {
-        if (CollUtil.isEmpty(lines)) {
-            lines = new ArrayList<>(Collections.singletonList("[00:00.00]当前没有歌词"));
-        }
-
+    public static List<LyricLine> notFount() {
         List<LyricLine> result = new ArrayList<>();
+        result.add(new LyricLine(0, "未找到歌词"));
+        return result;
+    }
+
+    public static List<LyricLine> parseLrc(List<String> lines) {
+        List<LyricLine> result = new ArrayList<>();
+
+        if (CollUtil.isEmpty(lines)) {
+            return result;
+        }
 
         for (String line : lines) {
             line = line.trim();

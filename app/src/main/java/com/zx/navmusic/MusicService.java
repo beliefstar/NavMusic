@@ -15,9 +15,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
+import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
 import android.media.AudioManager;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -29,18 +29,22 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.ServiceCompat;
 import androidx.core.graphics.drawable.IconCompat;
 
+import com.zx.navmusic.album.AlbumHandler;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.Util;
+import com.zx.navmusic.common.bean.LyricLine;
 import com.zx.navmusic.common.bean.MusicItem;
 import com.zx.navmusic.config.ConfigCenter;
 import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.event.NotifyListener;
+import com.zx.navmusic.lyric.LyricHandler;
 import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.MusicPlayState;
 import com.zx.navmusic.service.MusicPlayer;
 import com.zx.navmusic.service.strategy.PlayModeFactory;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
 
+import java.util.List;
 import java.util.function.BiConsumer;
 
 import cn.hutool.core.util.StrUtil;
@@ -72,6 +76,8 @@ public class MusicService extends Service {
     private NotificationManagerCompat notificationManager;
     private MusicPlayer musicPlayer;
     private PlayModeStrategy playModeStrategy;
+    private AlbumHandler albumHandler;
+    private LyricHandler lyricHandler;
 
     private final NotifyListener notifyListener = new NotifyListener() {
         @Override
@@ -121,6 +127,8 @@ public class MusicService extends Service {
         notificationBuilder = initNotificationBuilder();
         musicPlayer = new MusicPlayer(this);
         playModeStrategy = PlayModeFactory.get(PlayModeStrategy.RANDOM);
+        albumHandler = new AlbumHandler();
+        lyricHandler = new LyricHandler();
 
         playModeStrategy.listenInit().whenComplete(initer);
         musicPlayer.setListener(playerListener);
@@ -310,6 +318,14 @@ public class MusicService extends Service {
         return getMusicProvider().getItem(idx);
     }
 
+    public Bitmap getAlbum(String musicId) {
+        return albumHandler.getAlbum(musicId);
+    }
+
+    public List<LyricLine> getLyric(String musicId) {
+        return lyricHandler.getLyric(musicId);
+    }
+
     private NotificationCompat.Builder initNotificationBuilder() {
         Icon largeIcon = IconCompat.createWithResource(getApplicationContext(), R.drawable.ic_empty_music2).toIcon(getApplicationContext());
 
@@ -379,20 +395,15 @@ public class MusicService extends Service {
                 // 专辑名称
                 .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, musicPlayState.album)
                 // 专辑封面
-                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, getMusicProvider().getAlbum(musicPlayState.id))
+                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, getAlbum(musicPlayState.id))
                 // 时长
                 .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, musicPlayState.duration)
-                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, "[00:00.00]DISPLAY_DESCRIPTION")
-                .putString("android.media.metadata.LYRICS", "[00:00.00]LYRICS")
+//                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, StrUtil.format("{} - {}", musicPlayState.name, musicPlayState.artist))
 //                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, getAlbumArtistName())
 //                .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, getQueuePosition() + 1)
 //                .putLong(MediaMetadataCompat.METADATA_KEY_NUM_TRACKS, getQueue().length)
 //                .putString(MediaMetadataCompat.METADATA_KEY_GENRE, getGenreName())
                 .build());
-
-        Bundle bundle = new Bundle();
-        bundle.putString("lyrics", "[00:00.00]Bundle_lrc");
-        mediaSession.setExtras(bundle);
 
         int state = musicPlayState.isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
 

@@ -40,10 +40,9 @@ import com.zx.navmusic.common.bean.LyricLine;
 import com.zx.navmusic.databinding.ActivityPlaybackNewBinding;
 import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.event.NotifyListener;
-import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.MusicPlayState;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
-import com.zx.navmusic.util.LyricParser;
+import com.zx.navmusic.lyric.LyricParser;
 
 import java.util.List;
 
@@ -143,7 +142,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
         if (binding.ivDisc.getTag(R.id.iv_disc_res_id) == null
                 || !StrUtil.equals(binding.ivDisc.getTag(R.id.iv_disc_res_id).toString(), musicPlayState.id)) {
             // 不同歌曲，刷新封面
-            Bitmap album = MusicLiveProvider.getInstance().getAlbum(musicPlayState.id);
+            Bitmap album = MusicService.INSTANCE.getAlbum(musicPlayState.id);
 
             Glide.with(this)
                     .load(album)
@@ -162,14 +161,15 @@ public class PlaybackNewActivity extends AppCompatActivity {
         if (binding.rvLyrics.getTag(R.id.rv_lyric_res_id) == null
                 || !StrUtil.equals(binding.rvLyrics.getTag(R.id.rv_lyric_res_id).toString(), musicPlayState.id)) {
 
-            List<String> lyric = MusicLiveProvider.getInstance().getItemLyric(musicPlayState.id);
-            List<LyricLine> lyricLines = LyricParser.parseLrc(lyric);
-            lyricAdapter.changeData(lyricLines);
-            binding.rvLyrics.bringToFront();
-
-            if (CollUtil.isNotEmpty(lyric)) {
+            List<LyricLine> lyricLines = MusicService.INSTANCE.getLyric(musicPlayState.id);
+            if (CollUtil.isEmpty(lyricLines)) {
+                lyricLines = LyricParser.notFount();
+            } else {
                 binding.rvLyrics.setTag(R.id.rv_lyric_res_id, musicPlayState.id);
             }
+
+            lyricAdapter.changeData(lyricLines);
+            binding.rvLyrics.bringToFront();
         }
 
         binding.tvTitle.setText(musicPlayState.name);

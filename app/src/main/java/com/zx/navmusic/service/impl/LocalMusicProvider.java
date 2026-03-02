@@ -53,8 +53,9 @@ import cn.hutool.http.HttpUtil;
 
 public class LocalMusicProvider extends CloudMusicProvider {
 
-    private final ReentrantLock albumNameLock = new ReentrantLock();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    private final ReentrantLock albumLock = new ReentrantLock();
 
     private final Runnable storeTask = new Runnable() {
         @Override
@@ -207,48 +208,23 @@ public class LocalMusicProvider extends CloudMusicProvider {
     public Bitmap getAlbum(String musicId) {
         Bitmap bitmap = LocalStore.loadAlbum(MusicService.INSTANCE, musicId);
         if (bitmap != null) {
-            getAlbumName(musicId);
             return bitmap;
         }
 
         AsyncTask.run(() -> {
-            App.log("本地没有专辑图片，准备从云端加载");
-            Bitmap b = super.getAlbum(musicId);
-            if (b != null) {
-                App.log("从云端加载专辑图片成功，准备保存到本地");
-                LocalStore.flushAlbum(MusicService.INSTANCE, musicId, b);
-                MusicService.INSTANCE.triggerMusicStateChange();
-
-                getAlbumName(musicId);
-            }
-        });
-//        return BitmapFactory.decodeResource(MusicService.INSTANCE.getResources(), com.zx.navmusic.R.drawable.nav_logo);
-        return null;
-    }
-
-    @Override
-    public String getAlbumName(String musicId) {
-        MusicItem mi = getItem(musicId);
-        if (mi == null) {
-            return null;
-        }
-        if (StrUtil.isNotBlank(mi.album)) {
-            return mi.album;
-        }
-
-        AsyncTask.run(() -> {
-            if (albumNameLock.tryLock()) {
-                if (StrUtil.isNotBlank(mi.album)) {
+            albumLock.lock();
+            try {
+                if (LocalStore.loadAlbum(MusicService.INSTANCE, musicId) != null) {
                     return;
                 }
-                App.log("本地没有专辑名称，准备从云端加载");
-                String album = super.getAlbumName(musicId);
-                if (StrUtil.isNotBlank(album)) {
-                    App.log("从云端加载专辑名称成功，准备保存到本地");
-                    mi.album = album;
+
+                Bitmap b = super.getAlbum(musicId);
+                if (b != null) {
+                    LocalStore.flushAlbum(MusicService.INSTANCE, musicId, b);
                     MusicService.INSTANCE.triggerMusicStateChange();
                 }
-                albumNameLock.unlock();
+            } finally {
+                albumLock.unlock();
             }
         });
         return null;
