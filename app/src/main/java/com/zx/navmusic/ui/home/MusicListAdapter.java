@@ -34,7 +34,6 @@ public class MusicListAdapter extends BaseAdapter {
     private final Activity mContext;
     private final int mResource;
     private List<MusicItem> mObjects;
-    private int playMode;
 
     public MusicListAdapter(Activity context, int resource) {
         mContext = context;
@@ -78,7 +77,6 @@ public class MusicListAdapter extends BaseAdapter {
             });
         }
         mObjects = copy;
-        this.playMode = playMode;
         notifyDataSetChanged();
     }
 

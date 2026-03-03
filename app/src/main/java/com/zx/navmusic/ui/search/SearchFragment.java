@@ -138,6 +138,8 @@ public class SearchFragment extends Fragment {
             String keyword = s.toString();
             if (StrUtil.isNotBlank(keyword)) {
                 searchViewModel.searchLocal(keyword);
+            } else {
+                searchViewModel.loadLibrary();
             }
         }
     }
