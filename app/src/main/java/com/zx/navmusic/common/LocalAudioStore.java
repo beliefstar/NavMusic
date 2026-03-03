@@ -10,16 +10,78 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 
+import com.zx.navmusic.common.bean.MusicItem;
+import com.zx.navmusic.common.bean.MusicName;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.util.StrUtil;
 
 public class LocalAudioStore {
+
+    public static Uri find(Context ctx, MusicItem mi) {
+        if (StrUtil.isNotBlank(mi.ext) && StrUtil.equals(mi.ext, "mp3")) {
+            return findLike(ctx, mi.name, fileName -> {
+                MusicName musicName = Util.parseMusicName(fileName);
+                return StrUtil.equalsIgnoreCase(mi.name, musicName.name)
+                        && StrUtil.equalsIgnoreCase(mi.artist, musicName.artist);
+            });
+        }
+        return find(ctx, mi.displayName());
+    }
+
+    public static Uri findLike(Context ctx, String name, Predicate<String> filter) {
+        name = name.replace("/", "_");
+        Uri collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+
+        String[] projection = new String[] {
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.DISPLAY_NAME,
+                MediaStore.Audio.Media.SIZE,
+        };
+        ContentResolver resolver = ctx.getContentResolver();
+        String selection = MediaStore.Audio.Media.DISPLAY_NAME + " like '%" + name + "%'";
+        String[] selectionArgs = new String[] {};
+        try (Cursor cursor = resolver.query(
+                collection,
+                projection,
+                selection,
+                selectionArgs,
+                null
+        )) {
+            // Cache column indices.
+            int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
+            int nameColumn =
+                    cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
+            int sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE);
+
+            while (cursor.moveToNext()) {
+                // Get values of columns for a given Audio.
+                long id = cursor.getLong(idColumn);
+                int size = cursor.getInt(sizeColumn);
+                String displayName = cursor.getString(nameColumn);
+
+                if (StrUtil.equalsIgnoreCase(name, displayName)) {
+                    App.log("[本地存储]读取: [{}], size: [{}]", name, size);
+                    return ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+                }
+
+                if (filter.test(displayName)) {
+                    App.log("[本地存储]读取：[{}]-[{}], size: [{}]", name, displayName, size);
+                    return ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+                }
+            }
+        }
+        App.toast("未找到本地文件: " + name);
+        return null;
+    }
 
     public static Uri find(Context ctx, String name) {
         name = name.replace("/", "_");

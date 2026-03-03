@@ -1,6 +1,8 @@
 package com.zx.navmusic.service;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
 
@@ -17,6 +19,8 @@ import cn.hutool.core.collection.CollUtil;
 public abstract class MusicLiveProvider extends LiveData<List<MusicItem>> implements MusicProvider {
 
     private static volatile MusicLiveProvider instance;
+
+    protected final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public synchronized static MusicLiveProvider getInstance() {
         if (instance == null) {

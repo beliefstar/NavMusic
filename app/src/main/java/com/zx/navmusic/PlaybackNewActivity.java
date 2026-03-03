@@ -384,7 +384,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
             @Override
             public void run() {
                 int seek = MusicService.INSTANCE.getCurrentSeek();
-                updateLyricByTime(seek);
+                updateLyricByTime(seek + 300); // 提前300ms切换歌词，感觉更自然
                 lyricHandler.postDelayed(this, 500);
             }
         }, 500);

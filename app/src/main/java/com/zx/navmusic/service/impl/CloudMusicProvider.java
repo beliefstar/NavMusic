@@ -21,8 +21,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ConcurrentHashSet;
@@ -47,7 +49,6 @@ public class CloudMusicProvider extends MusicLiveProvider {
 
     public static final String API_UNLOCK = "/api/ip/unlock";
 
-
     public static final String SERVICE_BUSY = "service_busy";
     public static final String SERVICE_ERROR = "service_error";
     public static final String SERVICE_TIMEOUT = "service_timeout";
@@ -56,8 +57,24 @@ public class CloudMusicProvider extends MusicLiveProvider {
 
     protected final Set<String> initializing = new ConcurrentHashSet<>();
 
+    private List<SearchItem> libraryCache = Collections.emptyList();
+
     public CloudMusicProvider() {
         super(null);
+
+        Runnable refreshLibraryTask = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    libraryCache = doGetLibrary();
+                    App.log("定时更新曲库-{}", libraryCache.size());
+                } finally {
+                    AsyncTask.delay(this, TimeUnit.MINUTES.toMillis(1));
+                }
+            }
+        };
+
+        AsyncTask.run(refreshLibraryTask);
     }
 
     public void setToken(String token) {
@@ -80,6 +97,11 @@ public class CloudMusicProvider extends MusicLiveProvider {
             }
         }
         return -1;
+    }
+
+    @Override
+    public Boolean isInitializing(String musicId) {
+        return initializing.contains(musicId);
     }
 
     @Override
@@ -236,6 +258,26 @@ public class CloudMusicProvider extends MusicLiveProvider {
 
     private void listChange(List<MusicItem> lst) {
         postValue(lst);
+    }
+
+    private List<SearchItem> doGetLibrary() {
+        List<MusicItem> musicItems = doFetchList();
+        if (CollUtil.isEmpty(musicItems)) {
+            return new ArrayList<>();
+        }
+        return musicItems.stream()
+                .map(t -> {
+                    SearchItem si = new SearchItem();
+                    si.id = t.id;
+                    si.name = StrUtil.format("{}-{}.{}", t.artist, t.name, t.ext);
+                    si.cache = true;
+                    return si;
+                }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<SearchItem> getLibrary() {
+        return libraryCache;
     }
 
     public List<MusicItem> doFetchList() {

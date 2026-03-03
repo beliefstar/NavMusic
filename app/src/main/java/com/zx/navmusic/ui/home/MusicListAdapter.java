@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import cn.hutool.core.util.StrUtil;
+
 public class MusicListAdapter extends BaseAdapter {
 
     private final LayoutInflater mInflater;
@@ -101,7 +103,7 @@ public class MusicListAdapter extends BaseAdapter {
             // 弹出删除对话框
             new AlertDialog.Builder(mContext)
                     .setTitle("删除")
-                    .setMessage(item.name)
+                    .setMessage(item.displayName())
                     .setPositiveButton("删除", (dialog, which) -> {
                         MusicPlayState musicPlayState = NotifyCenter.getMusicPlayState();
                         if (musicPlayState != null && Objects.equals(musicPlayState.id, item.id)) {
@@ -122,6 +124,10 @@ public class MusicListAdapter extends BaseAdapter {
             if (item == null) {
                 return;
             }
+            if (MusicLiveProvider.getInstance().isInitializing(item.id)) {
+                App.toast("该曲目正在初始化中，请稍后播放");
+                return;
+            }
             Intent intent = new Intent(mContext, MusicService.class);
             intent.setAction(MusicService.ACTION_PLAY);
             intent.putExtra(MusicService.ACTION_PLAY_ID, item.id);
@@ -133,7 +139,12 @@ public class MusicListAdapter extends BaseAdapter {
         try {
             MusicItem item = (MusicItem) getItem(position);
             TextView text = view.findViewById(R.id.tv_mli);
-            text.setText(item.name);
+
+            if (item.download > 0) {
+                text.setText(StrUtil.format("{}({}%)", item.displayName(), item.download / 100D));
+            } else {
+                text.setText(item.displayName());
+            }
 
             ImageView imageView = view.findViewById(R.id.iv_mli_icon);
             int rankRes = item.getRankRes();

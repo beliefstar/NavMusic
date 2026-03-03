@@ -298,8 +298,9 @@ public class MusicService extends Service {
         if (item != null) {
             musicPlayState.id = item.id;
             musicPlayState.name = item.name;
+            musicPlayState.artist = item.artist;
             musicPlayState.album = item.album;
-            Util.parsePlayState(musicPlayState);
+//            Util.parsePlayState(musicPlayState);
         }
         if (musicPlayer.isReady()) {
             musicPlayState.duration = musicPlayer.getCurrentDuration();

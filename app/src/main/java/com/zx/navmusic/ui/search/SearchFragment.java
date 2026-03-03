@@ -61,6 +61,7 @@ public class SearchFragment extends Fragment {
 
         binding.etSearchKeyword.addTextChangedListener(new SearchTextChangeListener(searchViewModel));
 
+        searchViewModel.loadLibrary();
         Log.d(App.App_Name, "Search -- onCreate()");
         return root;
     }

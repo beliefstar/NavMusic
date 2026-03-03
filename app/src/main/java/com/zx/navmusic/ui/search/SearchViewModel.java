@@ -30,6 +30,14 @@ public class SearchViewModel extends ViewModel {
         return data;
     }
 
+    public void loadLibrary() {
+        List<SearchItem> library = musicProvider.getLibrary();
+        if (library == null) {
+            library = Collections.emptyList();
+        }
+        data.postValue(library);
+    }
+
     public void search(FragmentActivity activity, String keyword) {
         musicProvider.search(activity, keyword).whenComplete((lst, ex) -> {
             if (ex != null) {

@@ -3,8 +3,6 @@ package com.zx.navmusic.service.impl;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.Looper;
 
 import androidx.fragment.app.FragmentActivity;
 
@@ -19,7 +17,9 @@ import com.zx.navmusic.common.Encryptor;
 import com.zx.navmusic.common.LocalAudioStore;
 import com.zx.navmusic.common.LocalStore;
 import com.zx.navmusic.common.SignatureUtil;
+import com.zx.navmusic.common.Util;
 import com.zx.navmusic.common.bean.MusicItem;
+import com.zx.navmusic.common.bean.MusicName;
 import com.zx.navmusic.common.bean.SearchItem;
 import com.zx.navmusic.config.ConfigCenter;
 
@@ -40,7 +40,6 @@ import cn.hutool.core.codec.Base64;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.io.StreamProgress;
-import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
@@ -52,8 +51,6 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 
 public class LocalMusicProvider extends CloudMusicProvider {
-
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private final ReentrantLock albumLock = new ReentrantLock();
 
@@ -74,6 +71,8 @@ public class LocalMusicProvider extends CloudMusicProvider {
     @Override
     public void init(Context ctx) {
         List<MusicItem> musicItems = LocalStore.loadMusicData(ctx);
+        musicItems.forEach(Util::parseMusicItem);
+
         postValue(musicItems);
 
         observeForever(ms -> {
@@ -101,7 +100,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
 
     @Override
     public CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchItem si) {
-        MusicItem i = queryByName(si.name);
+        MusicItem i = queryBySearch(si);
 
         Uri uri = LocalAudioStore.find(activity, si.name);
         if (uri != null) {
@@ -114,15 +113,12 @@ public class LocalMusicProvider extends CloudMusicProvider {
             return CompletableFuture.completedFuture(i);
         }
 
+        if (!initializing.add(si.id)) {
+            return null;
+        }
         final MusicItem dirty = i;
         return AsyncTask.supply(() -> {
-            if (!initializing.add(si.id)) {
-                return null;
-            }
-            String name = si.name;
-            si.name = StrUtil.format("{}(正在获取资源)", si.name);
             MusicItem mi = dirty == null ? addItem(si) : dirty;
-            si.name = name;
             try {
                 String url = queryTouchUrl(si);
                 if (StrUtil.isBlank(url)) {
@@ -130,9 +126,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
                     return null;
                 }
 
-                mi.name = name;
                 mi.cache = !ConfigCenter.isUseLocalMode();
-
                 return doTouchMusic(activity, mi, url);
             } finally {
                 initializing.remove(si.id);
@@ -231,7 +225,9 @@ public class LocalMusicProvider extends CloudMusicProvider {
     }
 
     private MusicItem addItem(SearchItem si) {
-        MusicItem mi = new MusicItem(si.id, si.name, false);
+        MusicName musicName = Util.parseMusicName(si.name);
+
+        MusicItem mi = new MusicItem(si.id, musicName.name, musicName.artist, musicName.ext, false);
 
         List<MusicItem> nextList = new ArrayList<>(getValue());
         nextList.add(0, mi);
@@ -260,21 +256,22 @@ public class LocalMusicProvider extends CloudMusicProvider {
         return MD5.create().digestHex(s, StandardCharsets.UTF_8);
     }
 
-    private MusicItem queryByName(String name) {
+    private MusicItem queryBySearch(SearchItem si) {
         List<MusicItem> items = getValue();
         if (items == null) {
             return null;
         }
-        for (int i = 0; i < items.size(); i++) {
-            if (items.get(i).name.equals(name)) {
-                return items.get(i);
+        MusicName musicName = Util.parseMusicName(si.name);
+        for (MusicItem item : items) {
+            if (StrUtil.equals(item.name, musicName.name) && StrUtil.equals(item.artist, musicName.artist)) {
+                return item;
             }
         }
         return null;
     }
 
     private MusicItem doTouchMusic(FragmentActivity activity, MusicItem mi, String url) {
-        LocalAudioStore.put(activity, mi.name, out -> {
+        LocalAudioStore.put(activity, mi.displayName(), out -> {
             HttpGlobalConfig.setMaxRedirectCount(999);
 
             HttpDownloader.download(url, out, true, new StreamProgress() {
@@ -284,22 +281,14 @@ public class LocalMusicProvider extends CloudMusicProvider {
 
                 @Override
                 public void progress(long total, long progressSize) {
-                    String p = NumberUtil.formatPercent(progressSize * 1.0 / total, 2);
-                    if (mi.name.contains("(") && mi.name.endsWith(")")) {
-                        int i = mi.name.lastIndexOf("(");
-                        mi.name = mi.name.substring(0, i);
-                    }
-                    mi.name = mi.name + "(" + p + ")";
+                    mi.download = (int) (progressSize * 1.0 / total * 10000);
                     postValue(getValue());
                 }
 
                 @Override
                 public void finish() {
-                    if (mi.name.contains("(") && mi.name.endsWith(")")) {
-                        int i = mi.name.lastIndexOf("(");
-                        mi.name = mi.name.substring(0, i);
-                        postValue(getValue());
-                    }
+                    mi.download = 0;
+                    postValue(getValue());
                 }
             });
         });
@@ -307,7 +296,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
         storeData(activity);
 
         if (Boolean.FALSE.equals(mi.cache)) {
-            Uri uri = LocalAudioStore.find(activity, mi.name);
+            Uri uri = LocalAudioStore.find(activity, mi);
             if (uri != null) {
                 uploadAsync(activity, mi, uri);
             }

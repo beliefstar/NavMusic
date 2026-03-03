@@ -3,21 +3,56 @@ package com.zx.navmusic.common;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.util.TypedValue;
 
 import com.zx.navmusic.MainActivity;
 import com.zx.navmusic.PlaybackActivity;
 import com.zx.navmusic.PlaybackNewActivity;
 import com.zx.navmusic.R;
+import com.zx.navmusic.common.bean.MusicItem;
+import com.zx.navmusic.common.bean.MusicName;
 import com.zx.navmusic.config.ConfigCenter;
-import com.zx.navmusic.service.MusicPlayState;
+
+import java.util.List;
+
+import cn.hutool.core.io.file.FileNameUtil;
+import cn.hutool.core.lang.Pair;
+import cn.hutool.core.util.StrUtil;
 
 public class Util {
 
-    public static void parsePlayState(MusicPlayState t) {
+    public static void parseMusicItem(MusicItem t) {
         String name = t.name;
 
+        if (StrUtil.isBlank(name)) {
+            return;
+        }
+        if (StrUtil.isNotBlank(t.artist) && StrUtil.isNotBlank(t.ext)) {
+            return;
+        }
+
+        MusicName musicName = parseMusicName(name);
+        t.name = musicName.name;
+        t.artist = musicName.artist;
+        t.ext = musicName.ext;
+    }
+
+    public static MusicName parseMusicName(String name) {
+        MusicName mn = new MusicName();
+        if (StrUtil.isBlank(name)) {
+            return mn;
+        }
+        String ext = FileNameUtil.extName(name);
+        String main = FileNameUtil.mainName(name);
+
+        Pair<String, String> pair = parseMusicRawName(main);
+        mn.name = pair.getKey();
+        mn.artist = pair.getValue();
+        mn.ext = ext;
+        return mn;
+    }
+
+    public static Pair<String, String> parseMusicRawName(String name) {
         if (name.contains("《") && name.contains("》")) {
             int l = name.indexOf('《');
             int r = name.indexOf('》');
@@ -25,25 +60,21 @@ public class Util {
                 String artist = name.substring(0, l).trim();
                 String title = name.substring(l + 1, r).trim();
 
-                t.name = title;
-                t.artist = artist;
+                return Pair.of(title, artist);
             }
         }
 
         if (name.contains("-")) {
-            String[] parts = name.split("-");
-            if (parts.length >= 2) {
-                String artist = parts[0].trim();
-                String part1 = parts[1];
-                if (part1.contains(".")) {
-                    part1 = part1.substring(0, part1.lastIndexOf('.'));
-                }
+            List<String> parts = StrUtil.split(name, "-", true, true);
+            if (parts.size() >= 2) {
+                String artist = parts.get(0).trim();
+                String part1 = parts.get(1);
                 String title = part1.trim();
 
-                t.name = title;
-                t.artist = artist;
+                return Pair.of(title, artist);
             }
         }
+        return Pair.of(name, "");
     }
 
     public static Intent intentPlaying(Context ctx) {
@@ -87,9 +118,5 @@ public class Util {
             return R.drawable.ic_star;
         }
         return 0;
-    }
-
-    public static Uri getFileUri(Context ctx, String filename) {
-        return LocalAudioStore.find(ctx, filename);
     }
 }

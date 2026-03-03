@@ -6,7 +6,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 
 import com.zx.navmusic.common.App;
-import com.zx.navmusic.common.Util;
+import com.zx.navmusic.common.LocalAudioStore;
 import com.zx.navmusic.common.bean.MusicItem;
 
 import java.io.IOException;
@@ -82,7 +82,7 @@ public class MusicPlayer {
     }
 
     private void doPlay(MusicItem mi) {
-        Uri uri = Util.getFileUri(ctx, mi.name);
+        Uri uri = LocalAudioStore.find(ctx, mi);
         if (uri != null) {
             try {
                 playByUri(ctx, uri);
