@@ -15,7 +15,6 @@ import com.zx.navmusic.config.ConfigCenter;
 
 import java.util.List;
 
-import cn.hutool.core.io.file.FileNameUtil;
 import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.StrUtil;
 
@@ -42,8 +41,8 @@ public class Util {
         if (StrUtil.isBlank(name)) {
             return mn;
         }
-        String ext = FileNameUtil.extName(name);
-        String main = FileNameUtil.mainName(name);
+        String ext = extName(name);
+        String main = mainName(name);
 
         Pair<String, String> pair = parseMusicRawName(main);
         mn.name = pair.getKey();
@@ -118,5 +117,26 @@ public class Util {
             return R.drawable.ic_star;
         }
         return 0;
+    }
+
+
+    public static String extName(String name) {
+        int i = name.lastIndexOf(".");
+        if (i == -1 || i == name.length() - 1) {
+            return name;
+        }
+        return name.substring(i + 1);
+    }
+
+    public static String mainName(String name) {
+        int i = name.lastIndexOf(".");
+        if (i == -1) {
+            return name;
+        }
+        return name.substring(0, i);
+    }
+
+    public static String storeName(String name) {
+        return name.replace("/", "_");
     }
 }

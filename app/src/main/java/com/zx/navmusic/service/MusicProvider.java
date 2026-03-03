@@ -27,6 +27,8 @@ public interface MusicProvider {
 
     List<SearchItem> searchLocal(String keyword);
 
+    List<SearchItem> searchLibrary(String keyword);
+
     int getIndexById(String musicId);
 
     MusicItem getItem(int index);

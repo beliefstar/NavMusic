@@ -59,9 +59,9 @@ public class MusicPlayer {
         doPlay(mi);
     }
 
-    public void play(MusicItem mi) {
+    public boolean play(MusicItem mi) {
         autoPlay = true;
-        doPlay(mi);
+        return doPlay(mi);
     }
 
     public boolean isReady() {
@@ -81,14 +81,16 @@ public class MusicPlayer {
         }
     }
 
-    private void doPlay(MusicItem mi) {
+    private boolean doPlay(MusicItem mi) {
         Uri uri = LocalAudioStore.find(ctx, mi);
         if (uri != null) {
             try {
                 playByUri(ctx, uri);
+                return true;
             } catch (Exception ignore) {
             }
         }
+        return false;
     }
 
     private void playByUri(Context ctx, Uri uri) {

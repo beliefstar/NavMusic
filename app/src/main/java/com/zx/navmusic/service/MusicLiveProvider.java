@@ -88,4 +88,23 @@ public abstract class MusicLiveProvider extends LiveData<List<MusicItem>> implem
         }
         return sis;
     }
+
+    @Override
+    public List<SearchItem> searchLibrary(String keyword) {
+        List<SearchItem> values = getLibrary();
+        if (CollUtil.isEmpty(values)) {
+            return Collections.emptyList();
+        }
+        List<SearchItem> sis = new ArrayList<>();
+        for (SearchItem value : values) {
+            if (value.name.contains(keyword)) {
+                SearchItem si = new SearchItem();
+                si.name = value.name;
+                si.id = value.id;
+                si.cache = true;
+                sis.add(si);
+            }
+        }
+        return sis;
+    }
 }

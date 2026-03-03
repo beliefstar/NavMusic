@@ -20,7 +20,6 @@ import java.util.List;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
-import cn.hutool.core.io.file.FileNameUtil;
 
 public class LocalStore {
 
@@ -106,7 +105,7 @@ public class LocalStore {
     public static String loadLyric(Context ctx, String musicId) {
         File file = getLyricDir(ctx);
 
-        String main = FileNameUtil.mainName(musicId);
+        String main = Util.mainName(musicId);
         File lrcFile = new File(file, main + ".lrc");
 
         if (!lrcFile.exists()) {
@@ -120,7 +119,7 @@ public class LocalStore {
     public static void flushLyric(Context ctx, String musicId, String content) {
         File file = getLyricDir(ctx);
 
-        String main = FileNameUtil.mainName(musicId);
+        String main = Util.mainName(musicId);
         File lrcFile = new File(file, main + ".lrc");
 
         try {
@@ -144,7 +143,7 @@ public class LocalStore {
     public static Bitmap loadAlbum(Context ctx, String musicId) {
         File file = getAlbumDir(ctx);
 
-        String main = FileNameUtil.mainName(musicId);
+        String main = Util.mainName(musicId);
         File f = new File(file, main + ".jpg");
 
         if (!f.exists()) {
@@ -164,7 +163,7 @@ public class LocalStore {
     public static void flushAlbum(Context ctx, String musicId, Bitmap bitmap) {
         File file = getAlbumDir(ctx);
 
-        String main = FileNameUtil.mainName(musicId);
+        String main = Util.mainName(musicId);
         File f = new File(file, main + ".jpg");
 
         try {

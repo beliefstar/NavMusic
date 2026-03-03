@@ -45,6 +45,7 @@ import com.zx.navmusic.service.strategy.PlayModeFactory;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.BiConsumer;
 
 import cn.hutool.core.util.StrUtil;
@@ -70,6 +71,8 @@ public class MusicService extends Service {
             handleAction(intent);
         }
     };
+
+    private final ConcurrentLinkedDeque<Integer> playedMusicQueue = new ConcurrentLinkedDeque<>();
 
     private MediaSessionCompat mediaSession;
     private NotificationCompat.Builder notificationBuilder;
@@ -252,7 +255,10 @@ public class MusicService extends Service {
         MusicItem item = getMusicProvider().getItem(index);
         if (item != null) {
             beforeMusicChange(item);
-            musicPlayer.play(item);
+            if (!musicPlayer.play(item)) {
+                next();
+                return;
+            }
             playModeStrategy.resetPos(index, false);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
         }
@@ -273,15 +279,22 @@ public class MusicService extends Service {
         MusicItem item = getMusicProvider().getItem(index);
         if (item != null) {
             beforeMusicChange(item);
+            addPlayedQueue();
             musicPlayer.load(item);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
         }
     }
 
     private void previous() {
-        int index = playModeStrategy.previous();
-        MusicItem item = getMusicProvider().getItem(index);
+        Integer musicIndex = pollPlayedQueue();
+        if (musicIndex == null) {
+            next();
+            return;
+        }
+
+        MusicItem item = getMusicProvider().getItem(musicIndex);
         if (item != null) {
+            playModeStrategy.resetPos(musicIndex, false);
             beforeMusicChange(item);
             musicPlayer.load(item);
             NotifyCenter.onMusicStateChange(buildMusicPlayState());
@@ -460,5 +473,25 @@ public class MusicService extends Service {
         }
         App.log("onMusicChange out:{}, score:{}", out.name, out.score);
         MusicLiveProvider.getInstance().refresh();
+    }
+
+    private void addPlayedQueue() {
+        MusicPlayState musicPlayState = NotifyCenter.getMusicPlayState();
+        if (musicPlayState == null || musicPlayState.index < 0 || !musicPlayer.isReady()) {
+            return;
+        }
+        playedMusicQueue.addLast(musicPlayState.index);
+        if (playedMusicQueue.size() > 100) {
+            playedMusicQueue.pollFirst();
+        }
+        App.log("playedMusicQueue-add: {}", playedMusicQueue);
+    }
+
+    private Integer pollPlayedQueue() {
+        if (playedMusicQueue.isEmpty()) return null;
+
+        Integer index = playedMusicQueue.pollLast();
+        App.log("playedMusicQueue-poll: {}, {}", index, playedMusicQueue);
+        return index;
     }
 }

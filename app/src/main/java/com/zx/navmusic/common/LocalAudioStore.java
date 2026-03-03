@@ -28,17 +28,19 @@ public class LocalAudioStore {
 
     public static Uri find(Context ctx, MusicItem mi) {
         if (StrUtil.isNotBlank(mi.ext) && StrUtil.equals(mi.ext, "mp3")) {
-            return findLike(ctx, mi.name, fileName -> {
+
+            return findLike(ctx, mi.name, mi.displayName(), fileName -> {
                 MusicName musicName = Util.parseMusicName(fileName);
-                return StrUtil.equalsIgnoreCase(mi.name, musicName.name)
-                        && StrUtil.equalsIgnoreCase(mi.artist, musicName.artist);
+
+                return StrUtil.equalsIgnoreCase(Util.storeName(mi.name), Util.storeName(musicName.name))
+                        && StrUtil.equalsIgnoreCase(Util.storeName(mi.artist), Util.storeName(musicName.artist));
             });
         }
         return find(ctx, mi.displayName());
     }
 
-    public static Uri findLike(Context ctx, String name, Predicate<String> filter) {
-        name = name.replace("/", "_");
+    public static Uri findLike(Context ctx, String name, String musicName, Predicate<String> filter) {
+        name = Util.storeName(name);
         Uri collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
 
         String[] projection = new String[] {
@@ -68,8 +70,8 @@ public class LocalAudioStore {
                 int size = cursor.getInt(sizeColumn);
                 String displayName = cursor.getString(nameColumn);
 
-                if (StrUtil.equalsIgnoreCase(name, displayName)) {
-                    App.log("[本地存储]读取: [{}], size: [{}]", name, size);
+                if (StrUtil.equalsIgnoreCase(Util.storeName(musicName), displayName)) {
+                    App.log("[本地存储]读取: [{}], size: [{}]", displayName, size);
                     return ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
                 }
 

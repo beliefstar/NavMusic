@@ -56,8 +56,10 @@ public class SearchViewModel extends ViewModel {
         List<SearchItem> sis = musicProvider.searchLocal(keyword);
 
         if (sis == null) {
-            sis = Collections.emptyList();
+            sis = new ArrayList<>();
         }
+
+        sis.addAll(musicProvider.searchLibrary(keyword));
 
         App.log("searchLocal: {} - {}", keyword, sis);
         data.postValue(sis);
