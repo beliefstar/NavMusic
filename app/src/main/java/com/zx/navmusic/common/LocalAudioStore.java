@@ -49,8 +49,8 @@ public class LocalAudioStore {
                 MediaStore.Audio.Media.SIZE,
         };
         ContentResolver resolver = ctx.getContentResolver();
-        String selection = MediaStore.Audio.Media.DISPLAY_NAME + " like '%" + name + "%'";
-        String[] selectionArgs = new String[] {};
+        String selection = MediaStore.Audio.Media.DISPLAY_NAME + " like ?";
+        String[] selectionArgs = new String[] {"%" + name + "%"};
         try (Cursor cursor = resolver.query(
                 collection,
                 projection,

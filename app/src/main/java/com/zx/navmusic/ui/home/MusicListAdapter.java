@@ -136,15 +136,12 @@ public class MusicListAdapter extends BaseAdapter {
         try {
             MusicItem item = (MusicItem) getItem(position);
             TextView text = view.findViewById(R.id.tv_mli);
+            text.setText(item.displayName());
 
-//            if (item.download > 0) {
-//                text.setText(StrUtil.format("{}({}%)", item.displayName(), item.download / 100D));
-//            } else {
-                text.setText(item.displayName());
-//            }
-
+            // 下载进度
             applyDownloadBackground(view, item.download);
 
+            // 喜好度
             ImageView imageView = view.findViewById(R.id.iv_mli_icon);
             int rankRes = item.getRankRes();
             if (rankRes > 0) {
@@ -152,6 +149,14 @@ public class MusicListAdapter extends BaseAdapter {
                 imageView.setVisibility(View.VISIBLE);
             } else {
                 imageView.setVisibility(View.GONE);
+            }
+
+            // 高亮颜色
+            MusicPlayState playState = NotifyCenter.getMusicPlayState();
+            if (playState != null && Objects.equals(playState.id, item.id)) {
+                text.setTextColor(view.getResources().getColor(R.color.light_blue_900, view.getResources().newTheme()));
+            } else {
+                text.setTextColor(0xFF000000);
             }
         } catch (ClassCastException e) {
             Log.e("MusicListAdapter", "You must supply a resource ID for a TextView");
