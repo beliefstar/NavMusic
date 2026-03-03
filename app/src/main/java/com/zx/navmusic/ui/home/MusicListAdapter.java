@@ -17,6 +17,7 @@ import com.zx.navmusic.R;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.Util;
 import com.zx.navmusic.common.bean.MusicItem;
+import com.zx.navmusic.config.ConfigCenter;
 import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.MusicPlayState;
@@ -25,8 +26,6 @@ import com.zx.navmusic.service.strategy.PlayModeStrategy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import cn.hutool.core.util.StrUtil;
 
 public class MusicListAdapter extends BaseAdapter {
 
@@ -68,7 +67,7 @@ public class MusicListAdapter extends BaseAdapter {
         }
         App.log("MusicListAdapter onChange {}, {}", lst.size(), playMode);
         List<MusicItem> copy = new ArrayList<>(lst);
-        if (playMode == PlayModeStrategy.RANDOM) {
+        if (playMode == PlayModeStrategy.RANDOM && ConfigCenter.isFavoriteSort()) {
             copy.sort((a, b) -> {
                 if (a.score.equals(b.score)) {
                     return a.name.compareTo(b.name);
@@ -138,11 +137,13 @@ public class MusicListAdapter extends BaseAdapter {
             MusicItem item = (MusicItem) getItem(position);
             TextView text = view.findViewById(R.id.tv_mli);
 
-            if (item.download > 0) {
-                text.setText(StrUtil.format("{}({}%)", item.displayName(), item.download / 100D));
-            } else {
+//            if (item.download > 0) {
+//                text.setText(StrUtil.format("{}({}%)", item.displayName(), item.download / 100D));
+//            } else {
                 text.setText(item.displayName());
-            }
+//            }
+
+            applyDownloadBackground(view, item.download);
 
             ImageView imageView = view.findViewById(R.id.iv_mli_icon);
             int rankRes = item.getRankRes();
@@ -159,5 +160,43 @@ public class MusicListAdapter extends BaseAdapter {
         }
 
         return view;
+    }
+
+    private void applyDownloadBackground(View view, int progress) {
+
+        if (progress <= 0) {
+            // 下载完成或未下载：恢复默认背景
+            view.setBackground(null);
+            return;
+        }
+
+        float ratio = progress / 10000f;
+
+        int progressColor = 0x3329B6F6; // 半透明蓝色
+        int normalColor = 0x00000000;   // 透明
+
+        int[] colors = new int[]{
+                progressColor,
+                progressColor,
+                normalColor,
+                normalColor
+        };
+
+        float[] positions = new float[]{
+                0f,
+                ratio,
+                ratio,
+                1f
+        };
+
+        android.graphics.drawable.GradientDrawable drawable =
+                new android.graphics.drawable.GradientDrawable(
+                        android.graphics.drawable.GradientDrawable.Orientation.LEFT_RIGHT,
+                        colors);
+
+        drawable.setGradientType(android.graphics.drawable.GradientDrawable.LINEAR_GRADIENT);
+        drawable.setColors(colors, positions);
+
+        view.setBackground(drawable);
     }
 }

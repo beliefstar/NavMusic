@@ -51,6 +51,7 @@ public class SettingsFragment extends Fragment {
         }
         binding.cbUseLocalMode.setChecked(ConfigCenter.isUseLocalMode());
         binding.cbUseNewPlaybackUi.setChecked(ConfigCenter.isUseNewPlaybackUi());
+        binding.scFavoriteSort.setChecked(ConfigCenter.isFavoriteSort());
         binding.etBbsToken.setText(ConfigCenter.getBbsToken());
         binding.etFavoriteTep.setText(String.valueOf(ConfigCenter.getFavoriteStep()));
 
@@ -60,6 +61,10 @@ public class SettingsFragment extends Fragment {
 
         binding.cbUseNewPlaybackUi.setOnCheckedChangeListener((buttonView, isChecked) -> {
             ConfigCenter.change(configData -> configData.useNewPlaybackUi = isChecked, getContext());
+        });
+
+        binding.scFavoriteSort.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            ConfigCenter.change(configData -> configData.favoriteSort = isChecked, getContext());
         });
 
         binding.etToken.addTextChangedListener(new TextWatcher() {

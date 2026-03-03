@@ -269,7 +269,7 @@ public class CloudMusicProvider extends MusicLiveProvider {
                 .map(t -> {
                     SearchItem si = new SearchItem();
                     si.id = t.id;
-                    si.name = StrUtil.format("{}-{}.{}", t.artist, t.name, t.ext);
+                    si.name = t.displayName();
                     si.cache = true;
                     return si;
                 }).collect(Collectors.toList());

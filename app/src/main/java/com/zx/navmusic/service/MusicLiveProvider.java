@@ -80,7 +80,7 @@ public abstract class MusicLiveProvider extends LiveData<List<MusicItem>> implem
         for (MusicItem value : values) {
             if (value.name.contains(keyword)) {
                 SearchItem si = new SearchItem();
-                si.name = value.name;
+                si.name = value.displayName();
                 si.id = value.id;
                 si.cache = true;
                 sis.add(si);

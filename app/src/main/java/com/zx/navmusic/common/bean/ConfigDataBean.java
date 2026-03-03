@@ -10,4 +10,6 @@ public class ConfigDataBean {
     public Boolean useLocalMode;
 
     public Boolean useNewPlaybackUi = true;
+
+    public Boolean favoriteSort = true;
 }

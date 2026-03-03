@@ -41,6 +41,10 @@ public class ConfigCenter {
         if (configData.useLocalMode == null) {
             configData.useLocalMode = false;
         }
+
+        if (configData.favoriteSort == null) {
+            configData.favoriteSort = true;
+        }
     }
 
 
@@ -63,6 +67,10 @@ public class ConfigCenter {
 
     public static boolean isUseNewPlaybackUi() {
         return INSTANCE.configData.useNewPlaybackUi;
+    }
+
+    public static boolean isFavoriteSort() {
+        return INSTANCE.configData.favoriteSort;
     }
 
     public static int getFavoriteStep() {

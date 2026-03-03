@@ -13,8 +13,12 @@ import com.zx.navmusic.service.MusicProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+
+import cn.hutool.core.collection.CollUtil;
 
 public class SearchViewModel extends ViewModel {
 
@@ -60,6 +64,17 @@ public class SearchViewModel extends ViewModel {
         }
 
         sis.addAll(musicProvider.searchLibrary(keyword));
+
+        if (CollUtil.isNotEmpty(sis)) {
+            Set<String> set = new HashSet<>();
+            List<SearchItem> copy = new ArrayList<>();
+            for (SearchItem si : sis) {
+                if (set.add(si.name)) {
+                    copy.add(si);
+                }
+            }
+            sis = copy;
+        }
 
         App.log("searchLocal: {} - {}", keyword, sis);
         data.postValue(sis);
