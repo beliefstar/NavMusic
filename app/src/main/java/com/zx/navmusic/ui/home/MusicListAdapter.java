@@ -2,6 +2,7 @@ package com.zx.navmusic.ui.home;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -154,9 +155,13 @@ public class MusicListAdapter extends BaseAdapter {
             // 高亮颜色
             MusicPlayState playState = NotifyCenter.getMusicPlayState();
             if (playState != null && Objects.equals(playState.id, item.id)) {
-                text.setTextColor(view.getResources().getColor(R.color.light_blue_900, view.getResources().newTheme()));
+                text.setTextColor(view.getResources().getColor(R.color.light_blue_900, view.getContext().getTheme()));
+                text.setTypeface(null, Typeface.BOLD);
+                text.setTextSize(16);
             } else {
-                text.setTextColor(0xFF000000);
+                text.setTextColor(view.getResources().getColor(R.color.gray, view.getContext().getTheme()));
+                text.setTypeface(null, Typeface.NORMAL);
+                text.setTextSize(14);
             }
         } catch (ClassCastException e) {
             Log.e("MusicListAdapter", "You must supply a resource ID for a TextView");
