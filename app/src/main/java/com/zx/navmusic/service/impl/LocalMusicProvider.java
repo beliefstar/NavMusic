@@ -102,14 +102,17 @@ public class LocalMusicProvider extends CloudMusicProvider {
     public CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchItem si) {
         MusicItem i = queryBySearch(si);
 
-        Uri uri = LocalAudioStore.find(activity, si.name);
+        Uri uri = i == null
+                ? LocalAudioStore.find(activity, si.name)
+                : LocalAudioStore.find(activity, i);
+
         if (uri != null) {
             if (i == null) {
                 i = addItem(si);
             }
-            if (Boolean.FALSE.equals(i.cache)) {
-                uploadAsync(activity, i, uri);
-            }
+//            if (Boolean.FALSE.equals(i.cache)) {
+//                uploadAsync(activity, i, uri);
+//            }
             return CompletableFuture.completedFuture(i);
         }
 
@@ -227,7 +230,7 @@ public class LocalMusicProvider extends CloudMusicProvider {
     private MusicItem addItem(SearchItem si) {
         MusicName musicName = Util.parseMusicName(si.name);
 
-        MusicItem mi = new MusicItem(si.id, musicName.name, musicName.artist, musicName.ext, false);
+        MusicItem mi = new MusicItem(si.id, musicName.name, musicName.artist, musicName.ext, true);
 
         List<MusicItem> nextList = new ArrayList<>(getValue());
         nextList.add(0, mi);
@@ -295,12 +298,12 @@ public class LocalMusicProvider extends CloudMusicProvider {
 
         storeData(activity);
 
-        if (Boolean.FALSE.equals(mi.cache)) {
-            Uri uri = LocalAudioStore.find(activity, mi);
-            if (uri != null) {
-                uploadAsync(activity, mi, uri);
-            }
-        }
+//        if (Boolean.FALSE.equals(mi.cache)) {
+//            Uri uri = LocalAudioStore.find(activity, mi);
+//            if (uri != null) {
+//                uploadAsync(activity, mi, uri);
+//            }
+//        }
         return mi;
     }
 

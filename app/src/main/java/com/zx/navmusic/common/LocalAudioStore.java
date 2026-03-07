@@ -27,6 +27,10 @@ import cn.hutool.core.util.StrUtil;
 public class LocalAudioStore {
 
     public static Uri find(Context ctx, MusicItem mi) {
+        Uri uri = find(ctx, mi.displayName());
+        if (uri != null) {
+            return uri;
+        }
         if (StrUtil.isNotBlank(mi.ext) && StrUtil.equals(mi.ext, "mp3")) {
 
             return findLike(ctx, mi.name, mi.displayName(), fileName -> {
@@ -36,7 +40,7 @@ public class LocalAudioStore {
                         && StrUtil.equalsIgnoreCase(Util.storeName(mi.artist), Util.storeName(musicName.artist));
             });
         }
-        return find(ctx, mi.displayName());
+        return null;
     }
 
     public static Uri findLike(Context ctx, String name, String musicName, Predicate<String> filter) {
