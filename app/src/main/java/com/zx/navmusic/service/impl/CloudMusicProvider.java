@@ -10,10 +10,10 @@ import androidx.fragment.app.FragmentActivity;
 import com.alibaba.fastjson2.JSON;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.AsyncTask;
-import com.zx.navmusic.common.LocalAudioStore;
 import com.zx.navmusic.common.SignatureUtil;
 import com.zx.navmusic.common.bean.MusicItem;
 import com.zx.navmusic.common.bean.SearchItem;
+import com.zx.navmusic.common.bean.SearchResult;
 import com.zx.navmusic.service.MusicLiveProvider;
 
 import java.util.ArrayList;
@@ -26,9 +26,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ConcurrentHashSet;
-import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
@@ -47,17 +47,20 @@ public class CloudMusicProvider extends MusicLiveProvider {
     public static final String API_SEARCH_TOUCH = "/api/music/getPlayUrl";
     public static final String API_UPLOAD = "/api/v2/music/upload/";
 
+    public static final String API_V3_SEARCH = "/api/v3/music/search";
+    public static final String API_V3_TOUCH = "/api/v3/music/touch";
+
     public static final String API_UNLOCK = "/api/ip/unlock";
 
     public static final String SERVICE_BUSY = "service_busy";
     public static final String SERVICE_ERROR = "service_error";
     public static final String SERVICE_TIMEOUT = "service_timeout";
 
-    private String token = "fbf3a6a74df34b35a145d9bf341483cc";
+    private String secret = "fbf3a6a74df34b35a145d9bf341483cc";
 
     protected final Set<String> initializing = new ConcurrentHashSet<>();
 
-    private List<SearchItem> libraryCache = Collections.emptyList();
+    private List<SearchResult> libraryCache = Collections.emptyList();
 
     public CloudMusicProvider() {
         super(null);
@@ -78,11 +81,11 @@ public class CloudMusicProvider extends MusicLiveProvider {
     }
 
     public void setToken(String token) {
-        this.token = token;
+        this.secret = token;
     }
 
     public String getToken() {
-        return this.token;
+        return this.secret;
     }
 
     @Override
@@ -126,9 +129,9 @@ public class CloudMusicProvider extends MusicLiveProvider {
         if (musicItems == null) {
             return null;
         }
-        for (int i = 0; i < musicItems.size(); i++) {
-            if (musicItems.get(i).id.equals(musicId)) {
-                return musicItems.get(i);
+        for (MusicItem mi : musicItems) {
+            if (StrUtil.equals(mi.id, musicId)) {
+                return mi;
             }
         }
         return null;
@@ -141,32 +144,17 @@ public class CloudMusicProvider extends MusicLiveProvider {
 
     @Override
     public String getItemAlbumUrl(String musicId) {
-        return SignatureUtil.buildUrl(HOST + ALBUM_URL + "?musicId=" + musicId, token);
+        return SignatureUtil.buildUrl(HOST + ALBUM_URL + "?musicId=" + musicId, secret);
     }
 
     protected String getItemRemoteUrl(String id) {
-        return SignatureUtil.buildUrl(HOST + PLAY_URL + id, token);
+        return SignatureUtil.buildUrl(HOST + PLAY_URL + id, secret);
     }
 
     @Override
-    public CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchItem si) {
-        String tempId = UUID.randomUUID().toString(true);
-        String name = buildMusicItemName(si);
-        if (!initializing.add(tempId)) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        List<MusicItem> nextList = new ArrayList<>(getValue());
-        nextList.add(0, new MusicItem(tempId, name));
-        listChange(nextList);
-
-        return AsyncTask.supply(() -> {
-            MusicItem mi = doTouchMusic(activity, si);
-            if (mi != null) {
-                initializing.remove(tempId);
-            }
-            return mi;
-        });
+    public CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchResult si) {
+        App.toast("不支持的操作");
+        return CompletableFuture.completedFuture(BeanUtil.toBean(si, MusicItem.class));
     }
 
     @Override
@@ -179,13 +167,13 @@ public class CloudMusicProvider extends MusicLiveProvider {
     }
 
     @Override
-    public CompletableFuture<List<SearchItem>> search(FragmentActivity activity, String keyword) {
+    public CompletableFuture<List<SearchResult>> search(FragmentActivity activity, String keyword) {
         return AsyncTask.supply(() -> {
-            String url = HOST + API_SEARCH + "?keyword=" + keyword;
-            List<SearchItem> res = Collections.emptyList();
+            String url = HOST + API_V3_SEARCH + "?keyword=" + keyword;
+            List<SearchResult> res = Collections.emptyList();
 
             try {
-                res = executeHttp(HttpRequest.get(url), body -> JSON.parseArray(body, SearchItem.class), res);
+                res = executeHttp(HttpRequest.get(url), body -> JSON.parseArray(body, SearchResult.class), res);
             } catch (Exception e) {
                 Log.d(App.App_Name, "[CloudMusicProvider]搜索失败" + e);
             }
@@ -214,7 +202,7 @@ public class CloudMusicProvider extends MusicLiveProvider {
         String url = getItemAlbumUrl(musicId);
 
         Bitmap bitmap = null;
-        try (HttpResponse response = SignatureUtil.touchHeader(HttpRequest.get(url), token).execute()) {
+        try (HttpResponse response = SignatureUtil.touchHeader(HttpRequest.get(url), secret).execute()) {
             if (response.isOk()) {
                 bitmap = BitmapFactory.decodeStream(response.bodyStream());
             }
@@ -260,23 +248,24 @@ public class CloudMusicProvider extends MusicLiveProvider {
         postValue(lst);
     }
 
-    private List<SearchItem> doGetLibrary() {
+    private List<SearchResult> doGetLibrary() {
         List<MusicItem> musicItems = doFetchList();
         if (CollUtil.isEmpty(musicItems)) {
             return new ArrayList<>();
         }
         return musicItems.stream()
                 .map(t -> {
-                    SearchItem si = new SearchItem();
+                    SearchResult si = new SearchResult();
                     si.id = t.id;
-                    si.name = t.displayName();
-                    si.cache = true;
+                    si.name = t.name;
+                    si.artist = t.artist;
+                    si.ext = t.ext;
                     return si;
                 }).collect(Collectors.toList());
     }
 
     @Override
-    public List<SearchItem> getLibrary() {
+    public List<SearchResult> getLibrary() {
         return libraryCache;
     }
 
@@ -309,12 +298,8 @@ public class CloudMusicProvider extends MusicLiveProvider {
     }
 
 
-    protected String getDownloadUrl(SearchItem si) {
-        String name = si.name;
-        if (name.endsWith(".mp3")) {
-            name = name.substring(0, name.length() - 4);
-        }
-        String url = StrUtil.format("{}?thread={}&name={}", HOST + API_SEARCH_TOUCH, si.thread, name);
+    protected String touchMusic(SearchResult si) {
+        String url = StrUtil.format("{}?id={}", HOST + API_V3_TOUCH, si.id);
 
         String id = null;
         try {
@@ -334,47 +319,7 @@ public class CloudMusicProvider extends MusicLiveProvider {
                 return null;
         }
 
-        return getItemRemoteUrl(id);
-    }
-
-    private MusicItem doTouchMusic(FragmentActivity activity, SearchItem si) {
-        String url = StrUtil.format("{}?thread={}&name={}", HOST + API_SEARCH_TOUCH, si.thread, si.name);
-
-
-        String id = null;
-        try {
-            id = executeHttp(HttpRequest.get(url), body -> body, null);
-        } catch (Exception e) {
-            Log.d(App.App_Name, "[CloudMusicProvider]获取失败" + e);
-        }
-
-        if (StrUtil.isBlank(id)) {
-            return null;
-        }
-        switch (id) {
-            case SERVICE_ERROR:
-            case SERVICE_BUSY:
-            case SERVICE_TIMEOUT:
-                App.toast("服务繁忙，请稍后再试");
-                return null;
-        }
-
-        try {
-            List<MusicItem> list = doRefresh().get();
-            MusicItem mi = getItemById(id, list);
-            if (mi != null) {
-                String playUrl = getItemRemoteUrl(mi);
-                try (HttpResponse response = HttpRequest.get(playUrl).execute()) {
-                    LocalAudioStore.put(activity, mi.name, response.bodyStream());
-                } catch (Exception e) {
-                    Log.d(App.App_Name, "[CloudMusicProvider]下载到本地失败" + e);
-                }
-            }
-            return mi;
-        } catch (Exception e) {
-            Log.d(App.App_Name, "[CloudMusicProvider]获取失败" + e);
-        }
-        return null;
+        return id;
     }
 
     private void executeHttp(HttpRequest req, Consumer<String> consumer) {
@@ -384,7 +329,7 @@ public class CloudMusicProvider extends MusicLiveProvider {
         }, null);
     }
     private <T> T executeHttp(HttpRequest req, Function<String, T> func, T defaultValue) {
-        try (HttpResponse response = SignatureUtil.touchHeader(req, token).execute()) {
+        try (HttpResponse response = SignatureUtil.touchHeader(req, secret).execute()) {
             if (response.isOk()) {
                 String body = response.body();
                 return func.apply(body);

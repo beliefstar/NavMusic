@@ -43,6 +43,15 @@ public class LocalAudioStore {
         return null;
     }
 
+    public static Uri find(Context ctx, String name, String artist) {
+        return findLike(ctx, name, "", fileName -> {
+            MusicName musicName = Util.parseMusicName(fileName);
+
+            return StrUtil.equalsIgnoreCase(Util.storeName(name), Util.storeName(musicName.name))
+                    && StrUtil.equalsIgnoreCase(Util.storeName(artist), Util.storeName(musicName.artist));
+        });
+    }
+
     public static Uri findLike(Context ctx, String name, String musicName, Predicate<String> filter) {
         name = Util.storeName(name);
         Uri collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
@@ -85,7 +94,7 @@ public class LocalAudioStore {
                 }
             }
         }
-        App.toast("未找到本地文件: " + name);
+//        App.toast("未找到本地文件: " + name);
         return null;
     }
 

@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.bean.MusicItem;
-import com.zx.navmusic.common.bean.SearchItem;
+import com.zx.navmusic.common.bean.SearchResult;
 import com.zx.navmusic.service.MusicLiveProvider;
 import com.zx.navmusic.service.MusicProvider;
 
@@ -22,7 +22,7 @@ import cn.hutool.core.collection.CollUtil;
 
 public class SearchViewModel extends ViewModel {
 
-    private final MutableLiveData<List<SearchItem>> data;
+    private final MutableLiveData<List<SearchResult>> data;
     private MusicProvider musicProvider;
 
     public SearchViewModel() {
@@ -30,12 +30,12 @@ public class SearchViewModel extends ViewModel {
         musicProvider = MusicLiveProvider.getInstance();
     }
 
-    public LiveData<List<SearchItem>> getData() {
+    public LiveData<List<SearchResult>> getData() {
         return data;
     }
 
     public void loadLibrary() {
-        List<SearchItem> library = musicProvider.getLibrary();
+        List<SearchResult> library = musicProvider.getLibrary();
         if (library == null) {
             library = Collections.emptyList();
         }
@@ -57,7 +57,7 @@ public class SearchViewModel extends ViewModel {
 
 
     public void searchLocal(String keyword) {
-        List<SearchItem> sis = musicProvider.searchLocal(keyword);
+        List<SearchResult> sis = musicProvider.searchLocal(keyword);
 
         if (sis == null) {
             sis = new ArrayList<>();
@@ -67,8 +67,8 @@ public class SearchViewModel extends ViewModel {
 
         if (CollUtil.isNotEmpty(sis)) {
             Set<String> set = new HashSet<>();
-            List<SearchItem> copy = new ArrayList<>();
-            for (SearchItem si : sis) {
+            List<SearchResult> copy = new ArrayList<>();
+            for (SearchResult si : sis) {
                 if (set.add(si.name)) {
                     copy.add(si);
                 }
@@ -81,7 +81,7 @@ public class SearchViewModel extends ViewModel {
     }
 
     public CompletableFuture<MusicItem> choose(FragmentActivity activity, int position) {
-        SearchItem searchItem = data.getValue().get(position);
+        SearchResult searchItem = data.getValue().get(position);
 //        App.toast("点击了 name:{}, ref: {}", searchItem.name, searchItem.ref);
         return musicProvider.touchMusic(activity, searchItem);
     }

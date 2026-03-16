@@ -2,7 +2,6 @@ package com.zx.navmusic.config;
 
 import android.content.Context;
 
-import com.zx.navmusic.MusicService;
 import com.zx.navmusic.common.LocalStore;
 import com.zx.navmusic.common.bean.ConfigDataBean;
 
@@ -45,11 +44,6 @@ public class ConfigCenter {
         if (configData.favoriteSort == null) {
             configData.favoriteSort = true;
         }
-    }
-
-
-    public static void change(Consumer<ConfigDataBean> changer) {
-        change(changer, MusicService.INSTANCE);
     }
 
     public static void change(Consumer<ConfigDataBean> changer, Context ctx) {

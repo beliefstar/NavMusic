@@ -37,12 +37,12 @@ public class MusicItem {
     }
 
 
-    public MusicItem(String id, String name, String artist, String ext, boolean cache) {
+    public MusicItem(String id, String name, String artist, String ext) {
         this.id = id;
         this.name = name;
         this.artist = artist;
         this.ext = ext;
-        this.cache = cache;
+        this.cache = true;
     }
 
     public int getRankRes() {

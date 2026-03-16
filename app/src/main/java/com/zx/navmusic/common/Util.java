@@ -15,6 +15,7 @@ import com.zx.navmusic.config.ConfigCenter;
 
 import java.util.List;
 
+import cn.hutool.core.codec.Base64Decoder;
 import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.StrUtil;
 
@@ -34,6 +35,20 @@ public class Util {
         t.name = musicName.name;
         t.artist = musicName.artist;
         t.ext = musicName.ext;
+    }
+
+    public static MusicName parseMusicId(String musicId) {
+        MusicName mn = new MusicName();
+        String ext = extName(musicId);
+        String mainBase64 = mainName(musicId);
+
+        String main = Base64Decoder.decodeStr(mainBase64);
+
+        Pair<String, String> pair = parseMusicRawName(main);
+        mn.name = pair.getKey();
+        mn.artist = pair.getValue();
+        mn.ext = ext;
+        return mn;
     }
 
     public static MusicName parseMusicName(String name) {

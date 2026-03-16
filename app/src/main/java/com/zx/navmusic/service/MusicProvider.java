@@ -6,7 +6,7 @@ import android.graphics.Bitmap;
 import androidx.fragment.app.FragmentActivity;
 
 import com.zx.navmusic.common.bean.MusicItem;
-import com.zx.navmusic.common.bean.SearchItem;
+import com.zx.navmusic.common.bean.SearchResult;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -21,13 +21,13 @@ public interface MusicProvider {
 
     int count();
 
-    List<SearchItem> getLibrary();
+    List<SearchResult> getLibrary();
 
-    CompletableFuture<List<SearchItem>> search(FragmentActivity activity, String keyword);
+    CompletableFuture<List<SearchResult>> search(FragmentActivity activity, String keyword);
 
-    List<SearchItem> searchLocal(String keyword);
+    List<SearchResult> searchLocal(String keyword);
 
-    List<SearchItem> searchLibrary(String keyword);
+    List<SearchResult> searchLibrary(String keyword);
 
     int getIndexById(String musicId);
 
@@ -47,7 +47,7 @@ public interface MusicProvider {
 
     String getAlbumName(String musicId);
 
-    CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchItem si);
+    CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchResult si);
 
     void remove(int position);
 

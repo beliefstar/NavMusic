@@ -22,6 +22,7 @@ import com.zx.navmusic.MusicService;
 import com.zx.navmusic.R;
 import com.zx.navmusic.common.App;
 import com.zx.navmusic.common.bean.MusicItem;
+import com.zx.navmusic.common.bean.SearchResult;
 import com.zx.navmusic.databinding.FragmentSearchBinding;
 import com.zx.navmusic.ui.UIFragment;
 
@@ -50,7 +51,7 @@ public class SearchFragment extends Fragment {
 
         searchViewModel.getData().observeForever(lst -> {
             Optional.ofNullable(getActivity()).ifPresent(ac -> {
-                List<String> collect = lst.stream().map(t -> t.name).collect(Collectors.toList());
+                List<String> collect = lst.stream().map(SearchResult::displayName).collect(Collectors.toList());
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(ac, R.layout.list_item, collect);
                 binding.lvSearch.setAdapter(adapter);
             });

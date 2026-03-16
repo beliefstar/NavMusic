@@ -7,7 +7,7 @@ import android.os.Looper;
 import androidx.lifecycle.LiveData;
 
 import com.zx.navmusic.common.bean.MusicItem;
-import com.zx.navmusic.common.bean.SearchItem;
+import com.zx.navmusic.common.bean.SearchResult;
 import com.zx.navmusic.service.impl.LocalMusicProvider;
 
 import java.util.ArrayList;
@@ -71,18 +71,19 @@ public abstract class MusicLiveProvider extends LiveData<List<MusicItem>> implem
     }
 
     @Override
-    public List<SearchItem> searchLocal(String keyword) {
+    public List<SearchResult> searchLocal(String keyword) {
         List<MusicItem> values = getValue();
         if (CollUtil.isEmpty(values)) {
             return Collections.emptyList();
         }
-        List<SearchItem> sis = new ArrayList<>();
+        List<SearchResult> sis = new ArrayList<>();
         for (MusicItem value : values) {
             if (value.name.contains(keyword)) {
-                SearchItem si = new SearchItem();
-                si.name = value.displayName();
+                SearchResult si = new SearchResult();
+                si.name = value.name;
+                si.artist = value.artist;
+                si.ext = value.ext;
                 si.id = value.id;
-                si.cache = true;
                 sis.add(si);
             }
         }
@@ -90,18 +91,19 @@ public abstract class MusicLiveProvider extends LiveData<List<MusicItem>> implem
     }
 
     @Override
-    public List<SearchItem> searchLibrary(String keyword) {
-        List<SearchItem> values = getLibrary();
+    public List<SearchResult> searchLibrary(String keyword) {
+        List<SearchResult> values = getLibrary();
         if (CollUtil.isEmpty(values)) {
             return Collections.emptyList();
         }
-        List<SearchItem> sis = new ArrayList<>();
-        for (SearchItem value : values) {
+        List<SearchResult> sis = new ArrayList<>();
+        for (SearchResult value : values) {
             if (value.name.contains(keyword)) {
-                SearchItem si = new SearchItem();
+                SearchResult si = new SearchResult();
                 si.name = value.name;
+                si.artist = value.artist;
+                si.ext = value.ext;
                 si.id = value.id;
-                si.cache = true;
                 sis.add(si);
             }
         }

@@ -21,12 +21,9 @@ import com.zx.navmusic.common.Util;
 import com.zx.navmusic.common.bean.MusicItem;
 import com.zx.navmusic.common.bean.MusicName;
 import com.zx.navmusic.common.bean.SearchItem;
-import com.zx.navmusic.config.ConfigCenter;
+import com.zx.navmusic.common.bean.SearchResult;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -42,13 +39,11 @@ import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.io.StreamProgress;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.core.util.URLUtil;
 import cn.hutool.crypto.digest.MD5;
 import cn.hutool.http.HttpDownloader;
 import cn.hutool.http.HttpGlobalConfig;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
-import cn.hutool.http.HttpUtil;
 
 public class LocalMusicProvider extends CloudMusicProvider {
 
@@ -99,20 +94,17 @@ public class LocalMusicProvider extends CloudMusicProvider {
 
 
     @Override
-    public CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchItem si) {
+    public CompletableFuture<MusicItem> touchMusic(FragmentActivity activity, SearchResult si) {
         MusicItem i = queryBySearch(si);
 
         Uri uri = i == null
-                ? LocalAudioStore.find(activity, si.name)
+                ? LocalAudioStore.find(activity, si.name, si.artist)
                 : LocalAudioStore.find(activity, i);
 
         if (uri != null) {
             if (i == null) {
-                i = addItem(si);
+                i = addItem(buildStoreId(si.name, si.artist, si.ext), si);
             }
-//            if (Boolean.FALSE.equals(i.cache)) {
-//                uploadAsync(activity, i, uri);
-//            }
             return CompletableFuture.completedFuture(i);
         }
 
@@ -122,19 +114,30 @@ public class LocalMusicProvider extends CloudMusicProvider {
         final MusicItem dirty = i;
         return AsyncTask.supply(() -> {
             MusicItem mi = dirty == null ? addItem(si) : dirty;
+            String musicId;
             try {
-                String url = queryTouchUrl(si);
-                if (StrUtil.isBlank(url)) {
+                musicId = touchMusic(si);
+                if (StrUtil.isBlank(musicId)) {
                     App.toast("无法获取该歌曲资源");
+                    mi.name = mi.name + "(无法获取该歌曲资源)";
+                    postValue(getValue());
                     return null;
                 }
-
-                mi.cache = !ConfigCenter.isUseLocalMode();
-                return doTouchMusic(activity, mi, url);
+                fixMusicInfo(mi, musicId);
+                mi.cache = true;
+                return doTouchMusic(activity, mi, getItemRemoteUrl(musicId));
             } finally {
                 initializing.remove(si.id);
             }
         });
+    }
+
+    private void fixMusicInfo(MusicItem mi, String musicId) {
+        MusicName musicName = Util.parseMusicId(musicId);
+        mi.id = musicId;
+        mi.name = musicName.name;
+        mi.artist = musicName.artist;
+        mi.ext = musicName.ext;
     }
 
     @Override
@@ -149,37 +152,6 @@ public class LocalMusicProvider extends CloudMusicProvider {
         ArrayList<MusicItem> list = new ArrayList<>(getList());
         list.removeIf(m -> StrUtil.equals(m.id, id));
         postValue(list);
-    }
-
-    @Override
-    public CompletableFuture<List<SearchItem>> search(FragmentActivity activity, String keyword) {
-//        App.toast(activity, "useLocalMode: {}", useLocalMode);
-        if (!ConfigCenter.isUseLocalMode()) {
-            return super.search(activity, keyword);
-        }
-
-        return AsyncTask.supply(() -> {
-            String host = "https://www.hifini.com";
-            String range = "1";
-            String encodeKeyword = URLUtil.encode(keyword).replace("%", "_");
-            String url = StrUtil.format("{}/search-{}-{}-{}.htm", host, encodeKeyword, range, 1);
-
-            String listContent = HttpUtil.get(url);
-            Document doc = Jsoup.parse(listContent);
-            Elements as = doc.body().getElementsByTag("a");
-
-            List<SearchItem> items = new ArrayList<>();
-            for (Element a : as) {
-                String ref = a.attr("href");
-                if (ref.startsWith("thread-")) {
-                    SearchItem si = parseSearchItem(a);
-                    if (si != null) {
-                        items.add(si);
-                    }
-                }
-            }
-            return items;
-        });
     }
 
     @Override
@@ -227,10 +199,12 @@ public class LocalMusicProvider extends CloudMusicProvider {
         return null;
     }
 
-    private MusicItem addItem(SearchItem si) {
-        MusicName musicName = Util.parseMusicName(si.name);
+    private MusicItem addItem(SearchResult si) {
+        return addItem(si.id, si);
+    }
 
-        MusicItem mi = new MusicItem(si.id, musicName.name, musicName.artist, musicName.ext, true);
+    private MusicItem addItem(String id, SearchResult si) {
+        MusicItem mi = new MusicItem(id, si.name, si.artist, si.ext);
 
         List<MusicItem> nextList = new ArrayList<>(getValue());
         nextList.add(0, mi);
@@ -259,14 +233,13 @@ public class LocalMusicProvider extends CloudMusicProvider {
         return MD5.create().digestHex(s, StandardCharsets.UTF_8);
     }
 
-    private MusicItem queryBySearch(SearchItem si) {
+    private MusicItem queryBySearch(SearchResult si) {
         List<MusicItem> items = getValue();
         if (items == null) {
             return null;
         }
-        MusicName musicName = Util.parseMusicName(si.name);
         for (MusicItem item : items) {
-            if (StrUtil.equals(item.name, musicName.name) && StrUtil.equals(item.artist, musicName.artist)) {
+            if (StrUtil.equals(item.name, si.name) && StrUtil.equals(item.artist, si.artist)) {
                 return item;
             }
         }
@@ -297,13 +270,6 @@ public class LocalMusicProvider extends CloudMusicProvider {
         });
 
         storeData(activity);
-
-//        if (Boolean.FALSE.equals(mi.cache)) {
-//            Uri uri = LocalAudioStore.find(activity, mi);
-//            if (uri != null) {
-//                uploadAsync(activity, mi, uri);
-//            }
-//        }
         return mi;
     }
 
@@ -322,27 +288,11 @@ public class LocalMusicProvider extends CloudMusicProvider {
         });
     }
 
-    private String queryTouchUrl(SearchItem si) {
-        if (Boolean.TRUE.equals(si.cache)) {
-            return super.getItemRemoteUrl(si.id);
-        }
-        if (!ConfigCenter.isUseLocalMode()) {
-            return getDownloadUrl(si);
-        }
-        String bbsToken = ConfigCenter.getBbsToken();
-        try {
-            String url = "https://www.hifini.com/" + si.thread;
-            HttpRequest req = HttpRequest.get(url)
-                    .header("Cookie", "bbs_token=" + bbsToken);
-            String listContent = req.execute().body();
-//            String listContent = HttpUtil.get(url);
-            List<String> titles = ReUtil.findAll("music: \\[(.*?)\\]", listContent, 1);
-            return parsePlayUrl(titles.get(0));
-        } catch (Exception e) {
-            e.printStackTrace();
-            App.log("parsePlayUrlError:{}", e.getMessage());
-            return null;
-        }
+    private String queryTouchUrl(SearchResult si) {
+//        if (Boolean.TRUE.equals(si.cache)) {
+//            return super.getItemRemoteUrl(si.id);
+//        }
+        return touchMusic(si);
     }
 
     public static String parsePlayUrl(String s) {
@@ -384,6 +334,10 @@ public class LocalMusicProvider extends CloudMusicProvider {
 
     public static String buildStoreId(String name) {
         return Base64.encodeUrlSafe(name) + Constants.MUSIC_NAME_SUFFIX;
+    }
+
+    public static String buildStoreId(String name, String artist, String ext) {
+        return Base64.encodeUrlSafe(artist + "-" + name) + "." + ext;
     }
 
     private static String parseName(String name) {
