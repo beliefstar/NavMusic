@@ -226,7 +226,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
         lyricExpandedSet.clear(R.id.tv_title, ConstraintSet.END);
         lyricExpandedSet.connect(R.id.tv_title, ConstraintSet.TOP, R.id.iv_disc, ConstraintSet.TOP, dpToPx(2));
         lyricExpandedSet.connect(R.id.tv_title, ConstraintSet.START, R.id.iv_disc, ConstraintSet.END, dpToPx(12));
-        lyricExpandedSet.connect(R.id.tv_title, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, dpToPx(16));
+//        lyricExpandedSet.connect(R.id.tv_title, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, dpToPx(16));
 
         lyricExpandedSet.clear(R.id.tv_artist, ConstraintSet.TOP);
         lyricExpandedSet.clear(R.id.tv_artist, ConstraintSet.BOTTOM);
@@ -234,7 +234,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
         lyricExpandedSet.clear(R.id.tv_artist, ConstraintSet.END);
         lyricExpandedSet.connect(R.id.tv_artist, ConstraintSet.TOP, R.id.tv_title, ConstraintSet.BOTTOM, dpToPx(6));
         lyricExpandedSet.connect(R.id.tv_artist, ConstraintSet.START, R.id.iv_disc, ConstraintSet.END, dpToPx(12));
-        lyricExpandedSet.connect(R.id.tv_artist, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, dpToPx(16));
+//        lyricExpandedSet.connect(R.id.tv_artist, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, dpToPx(16));
 
         lyricExpandedSet.setVisibility(R.id.view_halo, View.GONE);
         lyricExpandedSet.setVisibility(R.id.iv_disc, View.VISIBLE);
