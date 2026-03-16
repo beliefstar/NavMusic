@@ -18,16 +18,21 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.GestureDetector;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.TextView;
+import android.util.TypedValue;
 
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.TransitionManager;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONWriter;
@@ -74,6 +79,10 @@ public class PlaybackNewActivity extends AppCompatActivity {
     private int currentMode = MODE_ORDER;
 
     private SeekBarControl seekBarControl;
+    private ConstraintSet lyricCollapsedSet;
+    private ConstraintSet lyricExpandedSet;
+    private boolean isLyricExpanded = false;
+    private GestureDetector lyricGestureDetector;
     private final NotifyListener notifyListener = new NotifyListener() {
         @Override
         public void onMusicStateChange(MusicPlayState playState) {
@@ -106,6 +115,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
         initHaloShader();
         initPlayButtonSpring();
         initClickEvents();
+        initLyricExpandCollapse();
 
         MusicPlayState musicPlayState = NotifyCenter.getMusicPlayState();
         render(musicPlayState);
@@ -184,6 +194,82 @@ public class PlaybackNewActivity extends AppCompatActivity {
         binding.btnModeOrder.setOnClickListener(v -> playModeClick(MODE_ORDER, v));
         binding.btnModeLoop.setOnClickListener(v -> playModeClick(MODE_LOOP, v));
         binding.btnModeShuffle.setOnClickListener(v -> playModeClick(MODE_SHUFFLE, v));
+    }
+
+    private void initLyricExpandCollapse() {
+        View rootView = binding.getRoot();
+        if (!(rootView instanceof ConstraintLayout)) {
+            return;
+        }
+
+        ConstraintLayout root = (ConstraintLayout) rootView;
+
+        lyricCollapsedSet = new ConstraintSet();
+        lyricCollapsedSet.clone(root);
+
+        lyricExpandedSet = new ConstraintSet();
+        lyricExpandedSet.clone(root);
+
+        int discSize = dpToPx(72);
+        lyricExpandedSet.clear(R.id.iv_disc, ConstraintSet.TOP);
+        lyricExpandedSet.clear(R.id.iv_disc, ConstraintSet.BOTTOM);
+        lyricExpandedSet.clear(R.id.iv_disc, ConstraintSet.START);
+        lyricExpandedSet.clear(R.id.iv_disc, ConstraintSet.END);
+        lyricExpandedSet.constrainWidth(R.id.iv_disc, discSize);
+        lyricExpandedSet.constrainHeight(R.id.iv_disc, discSize);
+        lyricExpandedSet.connect(R.id.iv_disc, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP, dpToPx(16));
+        lyricExpandedSet.connect(R.id.iv_disc, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, dpToPx(16));
+
+        lyricExpandedSet.clear(R.id.tv_title, ConstraintSet.TOP);
+        lyricExpandedSet.clear(R.id.tv_title, ConstraintSet.BOTTOM);
+        lyricExpandedSet.clear(R.id.tv_title, ConstraintSet.START);
+        lyricExpandedSet.clear(R.id.tv_title, ConstraintSet.END);
+        lyricExpandedSet.connect(R.id.tv_title, ConstraintSet.TOP, R.id.iv_disc, ConstraintSet.TOP, dpToPx(2));
+        lyricExpandedSet.connect(R.id.tv_title, ConstraintSet.START, R.id.iv_disc, ConstraintSet.END, dpToPx(12));
+        lyricExpandedSet.connect(R.id.tv_title, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, dpToPx(16));
+
+        lyricExpandedSet.clear(R.id.tv_artist, ConstraintSet.TOP);
+        lyricExpandedSet.clear(R.id.tv_artist, ConstraintSet.BOTTOM);
+        lyricExpandedSet.clear(R.id.tv_artist, ConstraintSet.START);
+        lyricExpandedSet.clear(R.id.tv_artist, ConstraintSet.END);
+        lyricExpandedSet.connect(R.id.tv_artist, ConstraintSet.TOP, R.id.tv_title, ConstraintSet.BOTTOM, dpToPx(6));
+        lyricExpandedSet.connect(R.id.tv_artist, ConstraintSet.START, R.id.iv_disc, ConstraintSet.END, dpToPx(12));
+        lyricExpandedSet.connect(R.id.tv_artist, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, dpToPx(16));
+
+        lyricExpandedSet.setVisibility(R.id.view_halo, View.GONE);
+        lyricExpandedSet.setVisibility(R.id.iv_disc, View.VISIBLE);
+        lyricExpandedSet.setVisibility(R.id.tv_title, View.VISIBLE);
+        lyricExpandedSet.setVisibility(R.id.tv_artist, View.VISIBLE);
+        lyricGestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                toggleLyricExpand(root);
+                return true;
+            }
+        });
+        binding.rvLyrics.addOnItemTouchListener(new RecyclerView.SimpleOnItemTouchListener() {
+            @Override
+            public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
+                return lyricGestureDetector.onTouchEvent(e);
+            }
+        });
+    }
+
+    private void toggleLyricExpand(ConstraintLayout root) {
+        isLyricExpanded = !isLyricExpanded;
+        TransitionManager.beginDelayedTransition(root);
+        if (isLyricExpanded) {
+            lyricExpandedSet.applyTo(root);
+        } else {
+            lyricCollapsedSet.applyTo(root);
+        }
+        if (lyricAdapter != null) {
+            lyricAdapter.setExpanded(isLyricExpanded);
+        }
+    }
+
+    private int dpToPx(float dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     private void playPauseClick(View view) {
@@ -417,6 +503,10 @@ public class PlaybackNewActivity extends AppCompatActivity {
         int currentIndex = 0;
         private List<LyricLine> lyrics;
         private String signature = "";
+        private boolean expanded = false;
+        private final float sizeBoostSp = 2f;
+        private final float currentSizeSp = 20f;
+        private final float normalSizeSp = 16f;
 
         @Override
         public VH onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -459,6 +549,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
             h.tv.setText(lyrics.get(pos).text);
 
             int diff = Math.abs(pos - currentIndex);
+            float boost = expanded ? sizeBoostSp : 0f;
 
             LinearGradient gradient = new LinearGradient(
                     0, 0, h.tv.getWidth(), 0,
@@ -471,7 +562,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
             if (diff == 0) {
                 // 当前歌词
                 h.tv.setTextColor(Color.parseColor("#00E5FF"));
-                h.tv.setTextSize(20);
+                h.tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, currentSizeSp + boost);
                 h.tv.setAlpha(1f);
 
                 h.tv.animate()
@@ -493,7 +584,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
                 float scale = Math.max(0.9f, 1f - diff * 0.05f);
 
                 h.tv.setTextColor(Color.parseColor("#88FFFFFF"));
-                h.tv.setTextSize(16);
+                h.tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, normalSizeSp + boost);
                 h.tv.setAlpha(alpha);
                 h.tv.setScaleX(scale);
                 h.tv.setScaleY(scale);
@@ -534,6 +625,12 @@ public class PlaybackNewActivity extends AppCompatActivity {
         @Override
         public int getItemCount() {
             return lyrics.size();
+        }
+
+        public void setExpanded(boolean expanded) {
+            if (this.expanded == expanded) return;
+            this.expanded = expanded;
+            notifyDataSetChanged();
         }
 
         class VH extends RecyclerView.ViewHolder {
