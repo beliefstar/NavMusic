@@ -5,13 +5,7 @@ import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Typeface;
 import android.os.Bundle;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.style.AbsoluteSizeSpan;
-import android.text.style.ForegroundColorSpan;
-import android.text.style.StyleSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -102,33 +96,13 @@ public class HomeFragment extends Fragment implements NotifyListener {
         if (playState == null) {
             return;
         }
+        tvPlayMusicName.setText(playState.name);
 
-        String fullText = playState.name + " - " + playState.artist;
-        SpannableString spannableString = new SpannableString(fullText);
-
-        spannableString.setSpan(
-                new ForegroundColorSpan(getResources().getColor(R.color.light_blue_900, getActivity().getTheme())),
-                0, playState.name.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
-        spannableString.setSpan(
-                new StyleSpan(Typeface.BOLD),
-                0, playState.name.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
-
-        spannableString.setSpan(
-                new ForegroundColorSpan(getResources().getColor(R.color.gray, getActivity().getTheme())),
-                playState.name.length(), fullText.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
-        spannableString.setSpan(
-                new AbsoluteSizeSpan(Util.convertSpToPx(getContext(), 18)),
-                playState.name.length(), fullText.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
-
-        tvPlayMusicName.setText(spannableString);
+        String artistCombo = playState.artist;
+        if (StrUtil.isNotBlank(playState.album)) {
+            artistCombo += " - " + playState.album;
+        }
+        binding.tvPlayMusicArtist.setText(artistCombo);
 
         if (playState.isPlaying) {
             if (rotation.isPaused()) {

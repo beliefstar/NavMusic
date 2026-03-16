@@ -385,9 +385,9 @@ public class PlaybackNewActivity extends AppCompatActivity {
             public void run() {
                 int seek = MusicService.INSTANCE.getCurrentSeek();
                 updateLyricByTime(seek + 300); // 提前300ms切换歌词，感觉更自然
-                lyricHandler.postDelayed(this, 500);
+                lyricHandler.postDelayed(this, 300);
             }
-        }, 500);
+        }, 300);
     }
 
     private void updateLyricByTime(long timeMs) {
@@ -429,12 +429,11 @@ public class PlaybackNewActivity extends AppCompatActivity {
             if (lyrics == null || lyrics.isEmpty()) return false;
 
             for (int i = 0; i < lyrics.size(); i++) {
-                if (timeMs < lyrics.get(i).timeMs) {
-                    changeCurrentIndex(Math.max(0, i - 1));
-                    return true;
+                if (timeMs <= lyrics.get(i).timeMs) {
+                    return changeCurrentIndex(Math.max(0, i - 1));
                 }
             }
-            return false;
+            return changeCurrentIndex(lyrics.size() - 1);
         }
 
         public void changeData(List<LyricLine> newLyrics) {
@@ -447,11 +446,12 @@ public class PlaybackNewActivity extends AppCompatActivity {
             notifyDataSetChanged();
         }
 
-        public void changeCurrentIndex(int newIndex) {
-            if (currentIndex == newIndex) return;
+        public boolean changeCurrentIndex(int newIndex) {
+            if (currentIndex == newIndex) return false;
 
             currentIndex = newIndex;
             notifyDataSetChanged();
+            return true;
         }
 
         @Override

@@ -63,7 +63,7 @@ public class MusicListAdapter extends BaseAdapter {
     }
 
     public void onChange(List<MusicItem> lst, int playMode) {
-        if (lst == null) {
+        if (lst == null || lst.equals(mObjects)) {
             return;
         }
         App.log("MusicListAdapter onChange {}, {}", lst.size(), playMode);
