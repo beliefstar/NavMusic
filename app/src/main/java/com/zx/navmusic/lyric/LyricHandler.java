@@ -10,7 +10,7 @@ import cn.hutool.cache.CacheUtil;
 import cn.hutool.core.collection.CollUtil;
 
 public class LyricHandler {
-    private final Cache<String, List<LyricLine>> cache = CacheUtil.newFIFOCache(15);
+    private final Cache<String, List<LyricLine>> cache = CacheUtil.newFIFOCache(50);
 
     public List<LyricLine> getLyric(String musicId) {
         if (cache.containsKey(musicId)) {
@@ -22,5 +22,16 @@ public class LyricHandler {
             cache.put(musicId, lyricLines);
         }
         return lyricLines;
+    }
+
+    public static int getCurrentIndex(List<LyricLine> lyrics, long timeMs) {
+        if (lyrics == null || lyrics.isEmpty()) return -1;
+
+        for (int i = 0; i < lyrics.size(); i++) {
+            if (timeMs <= lyrics.get(i).timeMs) {
+                return Math.max(0, i - 1);
+            }
+        }
+        return lyrics.size() - 1;
     }
 }

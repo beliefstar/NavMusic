@@ -412,11 +412,11 @@ public class MusicService extends Service {
                 .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, getAlbum(musicPlayState.id))
                 // 时长
                 .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, musicPlayState.duration)
-//                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, StrUtil.format("{} - {}", musicPlayState.name, musicPlayState.artist))
-//                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, getAlbumArtistName())
-//                .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, getQueuePosition() + 1)
-//                .putLong(MediaMetadataCompat.METADATA_KEY_NUM_TRACKS, getQueue().length)
-//                .putString(MediaMetadataCompat.METADATA_KEY_GENRE, getGenreName())
+
+//                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, "DISPLAY_TITLE")
+//                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, "DISPLAY_SUBTITLE")
+//                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, "DISPLAY_DESCRIPTION")
+
                 .build());
 
         int state = musicPlayState.isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;

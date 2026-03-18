@@ -14,20 +14,20 @@ import android.graphics.drawable.shapes.OvalShape;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.TypedValue;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.GestureDetector;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.TextView;
-import android.util.TypedValue;
 
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -45,9 +45,10 @@ import com.zx.navmusic.common.bean.LyricLine;
 import com.zx.navmusic.databinding.ActivityPlaybackNewBinding;
 import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.event.NotifyListener;
+import com.zx.navmusic.lyric.LyricHandler;
+import com.zx.navmusic.lyric.LyricParser;
 import com.zx.navmusic.service.MusicPlayState;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
-import com.zx.navmusic.lyric.LyricParser;
 
 import java.util.List;
 
@@ -516,14 +517,10 @@ public class PlaybackNewActivity extends AppCompatActivity {
         }
 
         private boolean updateLyricByTime(long timeMs) {
-            if (lyrics == null || lyrics.isEmpty()) return false;
+            int currentIndex = LyricHandler.getCurrentIndex(lyricAdapter.lyrics, timeMs);
+            if (currentIndex < 0) return false;
 
-            for (int i = 0; i < lyrics.size(); i++) {
-                if (timeMs <= lyrics.get(i).timeMs) {
-                    return changeCurrentIndex(Math.max(0, i - 1));
-                }
-            }
-            return changeCurrentIndex(lyrics.size() - 1);
+            return changeCurrentIndex(currentIndex);
         }
 
         public void changeData(List<LyricLine> newLyrics) {
