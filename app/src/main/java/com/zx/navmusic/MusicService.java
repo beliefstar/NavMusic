@@ -18,7 +18,9 @@ import android.content.pm.ServiceInfo;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
 import android.media.AudioManager;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -46,6 +48,7 @@ import com.zx.navmusic.service.strategy.PlayModeStrategy;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import cn.hutool.core.util.StrUtil;
@@ -64,6 +67,7 @@ public class MusicService extends Service {
     public static final String ACTION_NEXT = "nav_action_next";
     public static final String ACTION_PREVIOUS = "nav_action_previous";
     public static final String ACTION_PLAY_MODE = "nav_action_play_mode";
+    public static final String METADATA_KEY_LYRIC = "android.media.metadata.LYRIC";
 
     private final BroadcastReceiver intentReceiver = new BroadcastReceiver() {
         @Override
@@ -81,6 +85,20 @@ public class MusicService extends Service {
     private PlayModeStrategy playModeStrategy;
     private AlbumHandler albumHandler;
     private LyricHandler lyricHandler;
+    private final Handler btLyricHandler = new Handler(Looper.getMainLooper());
+    private final AtomicBoolean btLyricMark = new AtomicBoolean(false);
+    private String currentBtLyric = "";
+    private String currentBtMusicId;
+
+    private final Runnable btLyricRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (btLyricMark.get() || ConfigCenter.isBluetoothLyric()) {
+                trySyncBluetoothLyric();
+            }
+            btLyricHandler.postDelayed(this, 300);
+        }
+    };
 
     private final NotifyListener notifyListener = new NotifyListener() {
         @Override
@@ -150,6 +168,7 @@ public class MusicService extends Service {
         intentFilter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
         registerReceiver(intentReceiver, intentFilter, Context.RECEIVER_EXPORTED);
 
+        btLyricHandler.post(btLyricRunnable);
         ServiceCompat.startForeground(this, NOTIFICATION_ID, notificationBuilder.build(),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
     }
@@ -340,6 +359,46 @@ public class MusicService extends Service {
         return lyricHandler.getLyric(musicId);
     }
 
+    private void trySyncBluetoothLyric() {
+        if (!ConfigCenter.isBluetoothLyric()) {
+            if (StrUtil.isNotBlank(currentBtLyric)) {
+                currentBtLyric = "";
+                currentBtMusicId = null;
+                MusicPlayState playState = buildMusicPlayState();
+                updateMediaSession(playState);
+            }
+            btLyricMark.set(false);
+            return;
+        }
+        btLyricMark.set(true);
+
+        if (!musicPlayer.isReady()) {
+            return;
+        }
+
+        MusicPlayState playState = buildMusicPlayState();
+        if (StrUtil.isBlank(playState.id)) {
+            return;
+        }
+
+        List<LyricLine> lyrics = getLyric(playState.id);
+        int currentIndex = LyricHandler.getCurrentIndex(lyrics, playState.position + 300);
+        String lyric = "";
+        if (lyrics != null && currentIndex >= 0 && currentIndex < lyrics.size()) {
+            lyric = lyrics.get(currentIndex).text;
+        }
+
+        boolean sameMusic = StrUtil.equals(currentBtMusicId, playState.id);
+        boolean sameLyric = StrUtil.equals(currentBtLyric, lyric);
+        if (sameMusic && sameLyric) {
+            return;
+        }
+
+        currentBtMusicId = playState.id;
+        currentBtLyric = lyric;
+        updateMediaSession(playState);
+    }
+
     private NotificationCompat.Builder initNotificationBuilder() {
         Icon largeIcon = IconCompat.createWithResource(getApplicationContext(), R.drawable.ic_empty_music2).toIcon(getApplicationContext());
 
@@ -402,22 +461,34 @@ public class MusicService extends Service {
     }
 
     private void updateMediaSession(MusicPlayState musicPlayState) {
-        mediaSession.setMetadata(new MediaMetadataCompat.Builder()
+        boolean enableBluetoothLyric = ConfigCenter.isBluetoothLyric() && StrUtil.isNotBlank(currentBtLyric);
+
+        MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, musicPlayState.id)
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, musicPlayState.name)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, musicPlayState.artist)
-                // 专辑名称
                 .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, musicPlayState.album)
-                // 专辑封面
                 .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, getAlbum(musicPlayState.id))
-                // 时长
-                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, musicPlayState.duration)
+                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, musicPlayState.duration);
 
-//                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, "DISPLAY_TITLE")
-//                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, "DISPLAY_SUBTITLE")
-//                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, "DISPLAY_DESCRIPTION")
+        if (enableBluetoothLyric) {
+            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentBtLyric);
+            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST,
+                    StrUtil.format("{}-{}", musicPlayState.name, musicPlayState.artist));
 
-                .build());
+//            metadataBuilder.putString(METADATA_KEY_LYRIC, currentBtLyric);
+            // Some head units ignore LYRIC key and read display/title fields only.
+//            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, currentBtLyric);
+//            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, musicPlayState.name);
+//            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, currentBtLyric);
+        } else {
+            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, musicPlayState.name);
+            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, musicPlayState.artist);
+
+//            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, musicPlayState.name);
+//            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, musicPlayState.artist);
+//            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, "");
+        }
+
+        mediaSession.setMetadata(metadataBuilder.build());
 
         int state = musicPlayState.isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
 
@@ -439,6 +510,7 @@ public class MusicService extends Service {
 
     @Override
     public void onDestroy() {
+        btLyricHandler.removeCallbacksAndMessages(null);
         unregisterReceiver(intentReceiver);
         musicPlayer.destroy();
         mediaSession.release();

@@ -12,4 +12,6 @@ public class ConfigDataBean {
     public Boolean useNewPlaybackUi = true;
 
     public Boolean favoriteSort = true;
+
+    public Boolean bluetoothLyric = false;
 }

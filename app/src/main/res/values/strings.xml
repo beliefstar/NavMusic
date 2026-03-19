@@ -9,4 +9,5 @@
     <string name="none">无</string>
     <string name="seek">00:00</string>
     <string name="next_play">下一曲：</string>
+    <string name="bluetoothLyric">蓝牙歌词：</string>
 </resources>

@@ -42,6 +42,7 @@ public class SettingsFragment extends Fragment {
 //        binding.cbUseLocalMode.setChecked(ConfigCenter.isUseLocalMode());
 //        binding.cbUseNewPlaybackUi.setChecked(ConfigCenter.isUseNewPlaybackUi());
         binding.scFavoriteSort.setChecked(ConfigCenter.isFavoriteSort());
+        binding.scBluetoothLyric.setChecked(ConfigCenter.isBluetoothLyric());
 //        binding.etBbsToken.setText(ConfigCenter.getBbsToken());
         binding.etFavoriteTep.setText(String.valueOf(ConfigCenter.getFavoriteStep()));
 
@@ -55,6 +56,9 @@ public class SettingsFragment extends Fragment {
 
         binding.scFavoriteSort.setOnCheckedChangeListener((buttonView, isChecked) -> {
             ConfigCenter.change(configData -> configData.favoriteSort = isChecked, getContext());
+        });
+        binding.scBluetoothLyric.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            ConfigCenter.change(configData -> configData.bluetoothLyric = isChecked, getContext());
         });
 
 //        binding.etToken.addTextChangedListener(new TextWatcher() {

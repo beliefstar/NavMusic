@@ -44,6 +44,10 @@ public class ConfigCenter {
         if (configData.favoriteSort == null) {
             configData.favoriteSort = true;
         }
+
+        if (configData.bluetoothLyric == null) {
+            configData.bluetoothLyric = false;
+        }
     }
 
     public static void change(Consumer<ConfigDataBean> changer, Context ctx) {
@@ -69,5 +73,9 @@ public class ConfigCenter {
 
     public static int getFavoriteStep() {
         return INSTANCE.configData.favoriteStep;
+    }
+
+    public static boolean isBluetoothLyric() {
+        return INSTANCE.configData.bluetoothLyric;
     }
 }
