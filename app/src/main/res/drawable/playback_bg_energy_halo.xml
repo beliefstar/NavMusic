@@ -3,12 +3,12 @@
 
     <stroke
         android:width="2dp"
-        android:color="#66A5F3FF"/>
+        android:color="?attr/colorSecondary"/>
 
     <gradient
         android:type="radial"
         android:gradientRadius="200dp"
-        android:startColor="#55A5F3FF"
+        android:startColor="?attr/colorPrimary"
         android:endColor="#00000000"/>
 
 </shape>

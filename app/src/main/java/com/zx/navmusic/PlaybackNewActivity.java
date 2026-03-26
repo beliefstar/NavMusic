@@ -6,7 +6,6 @@ import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
 import android.graphics.drawable.ShapeDrawable;
@@ -23,17 +22,20 @@ import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.TextView;
+import android.graphics.Typeface;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
+import androidx.core.graphics.ColorUtils;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.transition.TransitionManager;
 
+import com.google.android.material.color.MaterialColors;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONWriter;
 import com.bumptech.glide.Glide;
@@ -94,6 +96,12 @@ public class PlaybackNewActivity extends AppCompatActivity {
 
     private Handler lyricHandler = new Handler(Looper.getMainLooper());
     private LyricAdapter lyricAdapter;
+    private int themeColorPrimary;
+    private int themeColorSecondary;
+    private int themeColorOnSurface;
+    private int themeColorBackground;
+    private int themeColorLyricActive;
+    private int themeColorLyricNormal;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +109,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityPlaybackNewBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        initThemeColors();
 
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -128,6 +137,36 @@ public class PlaybackNewActivity extends AppCompatActivity {
         seekBarControl.start();
 
         startFakeLyricProgress();
+    }
+
+    private void initThemeColors() {
+        View root = binding.getRoot();
+        themeColorPrimary = MaterialColors.getColor(root, com.google.android.material.R.attr.colorPrimary);
+        themeColorSecondary = MaterialColors.getColor(root, com.google.android.material.R.attr.colorSecondary);
+        themeColorOnSurface = MaterialColors.getColor(root, com.google.android.material.R.attr.colorOnSurface);
+        themeColorBackground = MaterialColors.getColor(root, android.R.attr.colorBackground);
+        themeColorLyricActive = resolveHighContrastLyricColor();
+        themeColorLyricNormal = ColorUtils.setAlphaComponent(themeColorOnSurface, 165);
+    }
+
+    private int resolveHighContrastLyricColor() {
+        int[] candidates = new int[] {
+                themeColorPrimary,
+                themeColorSecondary,
+                themeColorOnSurface,
+                ColorUtils.blendARGB(themeColorPrimary, Color.BLACK, 0.25f),
+                ColorUtils.blendARGB(themeColorPrimary, Color.WHITE, 0.25f)
+        };
+        int best = candidates[0];
+        double bestContrast = 0d;
+        for (int c : candidates) {
+            double contrast = ColorUtils.calculateContrast(c, themeColorBackground);
+            if (contrast > bestContrast) {
+                bestContrast = contrast;
+                best = c;
+            }
+        }
+        return best;
     }
 
     private void render(MusicPlayState musicPlayState) {
@@ -375,8 +414,8 @@ public class PlaybackNewActivity extends AppCompatActivity {
         shaderAnimator.setRepeatCount(ValueAnimator.INFINITE);
         shaderAnimator.addUpdateListener(animation -> {
             float p = (float) animation.getAnimatedValue();
-            int c1 = Color.HSVToColor(new float[]{260 + 60 * p, 0.8f, 1f});
-            int c2 = Color.HSVToColor(new float[]{200 + 60 * p, 0.9f, 1f});
+            int c1 = ColorUtils.blendARGB(themeColorPrimary, themeColorSecondary, p);
+            int c2 = ColorUtils.blendARGB(themeColorSecondary, themeColorPrimary, p);
 
             int width = binding.viewHalo.getWidth();
             if (width == 0) {
@@ -550,17 +589,11 @@ public class PlaybackNewActivity extends AppCompatActivity {
             int diff = Math.abs(pos - currentIndex);
             float boost = expanded ? sizeBoostSp : 0f;
 
-            LinearGradient gradient = new LinearGradient(
-                    0, 0, h.tv.getWidth(), 0,
-                    new int[]{Color.CYAN, Color.MAGENTA},
-                    null,
-                    Shader.TileMode.CLAMP
-            );
-            h.tv.getPaint().setShader(gradient);
-
             if (diff == 0) {
                 // 当前歌词
-                h.tv.setTextColor(Color.parseColor("#00E5FF"));
+                h.tv.getPaint().setShader(null);
+                h.tv.setTextColor(themeColorLyricActive);
+                h.tv.setTypeface(Typeface.DEFAULT_BOLD);
                 h.tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, currentSizeSp + boost);
                 h.tv.setAlpha(1f);
 
@@ -571,54 +604,18 @@ public class PlaybackNewActivity extends AppCompatActivity {
                     .setDuration(180)
                     .start();
 
-                // 颜色渐变动画
-                if (h.tv.getWidth() > 0) {
-                    animateTextGradient(h.tv, pos);
-                } else {
-                    h.tv.post(() -> animateTextGradient(h.tv, pos));
-                }
-
             } else {
                 float alpha = Math.max(0.25f, 1f - diff * 0.2f);
                 float scale = Math.max(0.9f, 1f - diff * 0.05f);
 
-                h.tv.setTextColor(Color.parseColor("#88FFFFFF"));
+                h.tv.getPaint().setShader(null);
+                h.tv.setTextColor(themeColorLyricNormal);
+                h.tv.setTypeface(Typeface.DEFAULT);
                 h.tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, normalSizeSp + boost);
                 h.tv.setAlpha(alpha);
                 h.tv.setScaleX(scale);
                 h.tv.setScaleY(scale);
             }
-        }
-
-        // 歌词文字渐变动画
-        private void animateTextGradient(TextView textView, int position) {
-            ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
-            animator.setDuration(2000);
-            animator.setRepeatCount(ValueAnimator.INFINITE);
-            animator.setRepeatMode(ValueAnimator.REVERSE);
-            animator.addUpdateListener(animation -> {
-                float progress = (float) animation.getAnimatedValue();
-
-                int[] colors = {
-                        Color.HSVToColor(new float[]{(200 + progress * 60) % 360, 0.9f, 1f}),
-                        Color.HSVToColor(new float[]{(260 + progress * 60) % 360, 0.8f, 1f}),
-                        Color.HSVToColor(new float[]{(320 + progress * 60) % 360, 0.9f, 1f})
-                };
-
-                LinearGradient gradient = new LinearGradient(
-                        0, 0, textView.getWidth(), 0,
-                        colors,
-                        new float[]{0f, 0.5f, 1f},
-                        Shader.TileMode.CLAMP
-                );
-
-                textView.getPaint().setShader(gradient);
-                textView.invalidate();
-            });
-
-            // 保存animator引用以便清理
-            textView.setTag(R.id.lyric_gradient_animator, animator);
-            animator.start();
         }
 
         @Override
