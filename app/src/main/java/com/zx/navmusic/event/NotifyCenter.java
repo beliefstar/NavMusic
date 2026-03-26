@@ -7,12 +7,14 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import cn.hutool.core.collection.ConcurrentHashSet;
+import cn.hutool.core.util.StrUtil;
 
 public class NotifyCenter {
 
     private static final NotifyCenter instance = new NotifyCenter();
 
     private volatile MusicPlayState musicPlayState;
+    private volatile String lastSign;
 
     private final Set<NotifyListener> notifyListeners;
 
@@ -39,7 +41,12 @@ public class NotifyCenter {
         instance.trigger(l -> l.onMusicPlayPause(playState), "onMusicPlayPause");
     }
 
-    public static void onMusicStateChange(MusicPlayState playState) {
+    public synchronized static void onMusicStateChange(MusicPlayState playState) {
+        String sign = playState.toString();
+        if (StrUtil.isNotBlank(instance.lastSign) && StrUtil.equals(sign, instance.lastSign)) {
+            return;
+        }
+        instance.lastSign = sign;
         instance.musicPlayState = playState;
         instance.trigger(l -> l.onMusicStateChange(playState), "onMusicStateChange");
     }

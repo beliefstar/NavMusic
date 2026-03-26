@@ -1,22 +1,21 @@
 package com.zx.navmusic.ui.home;
 
 import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.LinearInterpolator;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.bumptech.glide.request.RequestOptions;
 import com.zx.navmusic.MusicService;
 import com.zx.navmusic.R;
@@ -75,7 +74,7 @@ public class HomeFragment extends Fragment implements NotifyListener {
                 Util.navigatePlaying(ctx);
             }
         });
-        initCircularImage();
+//        initCircularImage();
 
         // 恢复播放组件状态
         onMusicStateChange(NotifyCenter.getMusicPlayState());
@@ -96,6 +95,26 @@ public class HomeFragment extends Fragment implements NotifyListener {
         if (playState == null) {
             return;
         }
+
+        if (binding.ivPlayMusicAlbumImage.getTag(R.id.iv_disc_res_id) == null
+                || !StrUtil.equals(binding.ivPlayMusicAlbumImage.getTag(R.id.iv_disc_res_id).toString(), playState.id)) {
+
+            Bitmap album = MusicService.INSTANCE.getAlbum(playState.id);
+
+            Glide.with(this)
+                    .load(album)
+                    .placeholder(R.drawable.ic_music_plus)  // 加载中显示的图片
+                    .error(R.drawable.ic_music_plus)  // 加载失败显示的图片
+                    .centerCrop()  // 裁剪方式
+                    .apply(new RequestOptions()
+                            .transform(new RoundedCorners(50)))
+                    .into(binding.ivPlayMusicAlbumImage);
+
+            if (album != null) {
+                binding.ivPlayMusicAlbumImage.setTag(R.id.iv_disc_res_id, playState.id);
+            }
+        }
+
         tvPlayMusicName.setText(playState.name);
 
         String artistCombo = playState.artist;
@@ -118,21 +137,21 @@ public class HomeFragment extends Fragment implements NotifyListener {
         listAdapter.onChange(MusicLiveProvider.getInstance().getList(), playState.playSwitchStrategy);
     }
 
-    private void initCircularImage() {
-        ImageView imageView = binding.ivPlayMusicNameImage;
-
-        // 设置圆形图片
-        Glide.with(this)
-                .load(R.drawable.ic_music_plus)
-                .apply(RequestOptions.circleCropTransform())
-                .into(imageView);
-
-        // 使用 ObjectAnimator 创建旋转动画
-        rotation = ObjectAnimator.ofFloat(imageView, "rotation", 0f, 360f);
-        rotation.setDuration(5000);
-        rotation.setRepeatCount(ValueAnimator.INFINITE);
-        rotation.setInterpolator(new LinearInterpolator());
-    }
+//    private void initCircularImage() {
+//        ImageView imageView = binding.ivPlayMusicNameImage;
+//
+//        // 设置圆形图片
+//        Glide.with(this)
+//                .load(R.drawable.ic_music_plus)
+//                .apply(RequestOptions.circleCropTransform())
+//                .into(imageView);
+//
+//        // 使用 ObjectAnimator 创建旋转动画
+//        rotation = ObjectAnimator.ofFloat(imageView, "rotation", 0f, 360f);
+//        rotation.setDuration(5000);
+//        rotation.setRepeatCount(ValueAnimator.INFINITE);
+//        rotation.setInterpolator(new LinearInterpolator());
+//    }
 
     @Override
     public void onDestroyView() {

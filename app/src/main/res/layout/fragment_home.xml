@@ -7,59 +7,64 @@
     android:orientation="vertical"
     tools:context=".ui.home.HomeFragment">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="15sp"
-        android:paddingStart="15sp"
-        android:paddingEnd="15sp"
-        android:textSize="12sp"
-        android:text="@string/on_playing" />
-
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <ImageView
-            android:id="@+id/iv_play_music_name_image"
-            android:layout_width="25sp"
-            android:layout_height="25sp"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="18sp"
-            android:layout_marginEnd="5sp"
-            android:src="@drawable/ic_music_plus"
-            android:contentDescription="@string/none"/>
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#3329B6F6">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15sp"
+            android:paddingStart="15sp"
+            android:paddingEnd="15sp"
+            android:textSize="12sp"
+            android:text="@string/on_playing"
+            android:textColor="@color/light_blue_900"/>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-                <TextView
-                    android:id="@+id/tv_play_music_name"
-                    android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <ImageView
+                android:id="@+id/iv_play_music_album_image"
+                android:layout_width="55sp"
+                android:layout_height="55sp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="18sp"
+                android:layout_marginEnd="0sp"
+                android:src="@drawable/ic_music_plus"
+                android:contentDescription="@string/none"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingTop="10sp"
-                    android:paddingBottom="5sp"
-                    android:paddingStart="15sp"
-                    android:paddingEnd="15sp"
-                    android:textSize="25sp"
-                    android:gravity="center_vertical"
-                    android:textStyle="bold"
-                    android:textColor="@color/light_blue_600"
-                    android:text="@string/none"
-                    android:drawablePadding="10sp" />
-                <TextView
-                    android:id="@+id/tv_play_music_artist"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="0sp"
-                    android:paddingBottom="10sp"
-                    android:paddingStart="15sp"
-                    android:paddingEnd="15sp"
-                    android:textSize="14sp"
-                    android:gravity="center_vertical"
-                    android:textColor="@color/gray"
-                    android:text="@string/none"
-                    android:drawablePadding="10sp" />
+                    android:orientation="vertical"
+                    android:paddingStart="5sp"
+                    android:paddingEnd="15sp">
+                    <TextView
+                        android:id="@+id/tv_play_music_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="10sp"
+                        android:paddingBottom="5sp"
+                        android:textSize="25sp"
+                        android:gravity="center_vertical"
+                        android:textStyle="bold"
+                        android:textColor="@color/light_blue_900"
+                        android:text="@string/none"
+                        android:drawablePadding="10sp" />
+                    <TextView
+                        android:id="@+id/tv_play_music_artist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="0sp"
+                        android:paddingBottom="10sp"
+                        android:textSize="14sp"
+                        android:gravity="center_vertical"
+                        android:textColor="@color/gray"
+                        android:text="@string/none"
+                        android:drawablePadding="10sp" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 

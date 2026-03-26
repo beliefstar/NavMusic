@@ -1,5 +1,7 @@
 package com.zx.navmusic.service;
 
+import androidx.annotation.NonNull;
+
 public class MusicPlayState {
 
     public String id;
@@ -20,13 +22,19 @@ public class MusicPlayState {
 
     public int index;
 
-    public void reset() {
-        name = "";
-        artist = "";
-        isPlaying = false;
-        playSwitchStrategy = 0;
-        duration = 0;
-        position = 0;
-        index = 0;
+    @NonNull
+    @Override
+    public String toString() {
+        return "MusicPlayState{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", artist='" + artist + '\'' +
+                ", album='" + album + '\'' +
+                ", isPlaying=" + isPlaying +
+                ", playSwitchStrategy=" + playSwitchStrategy +
+                ", duration=" + duration +
+                ", position=" + position +
+                ", index=" + index +
+                '}';
     }
 }
