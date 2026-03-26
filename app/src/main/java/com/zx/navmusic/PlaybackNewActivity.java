@@ -49,6 +49,7 @@ import com.zx.navmusic.lyric.LyricHandler;
 import com.zx.navmusic.lyric.LyricParser;
 import com.zx.navmusic.service.MusicPlayState;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
+import com.zx.navmusic.ui.ThemeHelper;
 
 import java.util.List;
 
@@ -96,6 +97,7 @@ public class PlaybackNewActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeHelper.applyTheme(this);
         super.onCreate(savedInstanceState);
         binding = ActivityPlaybackNewBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());

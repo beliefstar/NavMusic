@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
     tools:context=".ui.settings.SettingsFragment">
 
     <androidx.appcompat.widget.LinearLayoutCompat
@@ -25,6 +26,7 @@
                 android:layout_height="40sp"
                 android:textSize="20sp"
                 android:textAlignment="center"
+                android:textColor="?attr/colorOnBackground"
                 android:text="version:"/>
 
             <TextView
@@ -33,100 +35,24 @@
                 android:layout_height="50sp"
                 android:textSize="20sp"
                 android:textAlignment="center"
+                android:textColor="?attr/colorOnBackground"
                 android:text="version"/>
         </androidx.appcompat.widget.LinearLayoutCompat>
-
-
-<!--        <Button-->
-<!--            android:id="@+id/btn_unlock"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="unlock" />-->
-
-<!--        <Button-->
-<!--            android:id="@+id/btn_jump"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="jump"/>-->
-
-
-<!--        <androidx.appcompat.widget.LinearLayoutCompat-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:orientation="horizontal">-->
-<!--            <TextView-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="40sp"-->
-<!--                android:text="useLocalMode:"-->
-<!--                android:textAlignment="viewEnd"-->
-<!--                android:textSize="20sp" />-->
-
-<!--            <androidx.appcompat.widget.SwitchCompat-->
-<!--                android:id="@+id/cb_use_local_mode"-->
-<!--                android:layout_width="60dp"-->
-<!--                android:layout_height="51dp"-->
-<!--                />-->
-<!--        </androidx.appcompat.widget.LinearLayoutCompat>-->
-
-
-<!--        <androidx.appcompat.widget.LinearLayoutCompat-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:orientation="horizontal">-->
-<!--            <TextView-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="40sp"-->
-<!--                android:text="use new playback ui:"-->
-<!--                android:textAlignment="viewEnd"-->
-<!--                android:textSize="20sp" />-->
-
-<!--            <androidx.appcompat.widget.SwitchCompat-->
-<!--                android:id="@+id/cb_use_new_playback_ui"-->
-<!--                android:layout_width="60dp"-->
-<!--                android:layout_height="51dp"-->
-<!--                />-->
-<!--        </androidx.appcompat.widget.LinearLayoutCompat>-->
-
-<!--        <TextView-->
-<!--            android:id="@+id/textView2"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="30sp"-->
-<!--            android:text="bbs_token:"-->
-<!--            android:textAlignment="viewEnd"-->
-<!--            android:textSize="20sp" />-->
-
-<!--        <EditText-->
-<!--            android:id="@+id/et_bbs_token"-->
-<!--            android:maxLines="3"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"/>-->
-
-<!--        <TextView-->
-<!--            android:id="@+id/textView"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="30sp"-->
-<!--            android:text="token: "-->
-<!--            android:textAlignment="viewEnd"-->
-<!--            android:textSize="20sp" />-->
-<!--        <EditText-->
-<!--            android:id="@+id/et_token"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            />-->
-
-<!--    </LinearLayout>-->
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="30sp"
             android:text="favoriteStep: "
             android:textAlignment="viewEnd"
+            android:textColor="?attr/colorOnBackground"
             android:textSize="20sp" />
         <EditText
             android:id="@+id/et_favorite_tep"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:autofillHints="无"
+            android:textColor="?attr/colorOnBackground"
+            android:textColorHint="?android:attr/textColorHint"
             android:inputType="number" />
 
         <androidx.appcompat.widget.LinearLayoutCompat
@@ -138,6 +64,7 @@
                 android:layout_height="40sp"
                 android:text="favoriteSort:"
                 android:textAlignment="viewEnd"
+                android:textColor="?attr/colorOnBackground"
                 android:textSize="20sp" />
 
             <androidx.appcompat.widget.SwitchCompat
@@ -156,6 +83,7 @@
                 android:layout_height="40sp"
                 android:text="@string/bluetoothLyric"
                 android:textAlignment="viewEnd"
+                android:textColor="?attr/colorOnBackground"
                 android:textSize="20sp" />
 
             <androidx.appcompat.widget.SwitchCompat
@@ -163,6 +91,49 @@
                 android:layout_width="60dp"
                 android:layout_height="51dp" />
         </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="30sp"
+            android:text="主题:"
+            android:textAlignment="viewEnd"
+            android:textColor="?attr/colorOnBackground"
+            android:textSize="20sp" />
+
+        <RadioGroup
+            android:id="@+id/rg_theme"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/rb_theme_simple"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnBackground"
+                android:text="简洁" />
+
+            <RadioButton
+                android:id="@+id/rb_theme_tech"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnBackground"
+                android:text="科技" />
+
+            <RadioButton
+                android:id="@+id/rb_theme_vivid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnBackground"
+                android:text="鲜艳" />
+
+            <RadioButton
+                android:id="@+id/rb_theme_dark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnBackground"
+                android:text="暗黑" />
+        </RadioGroup>
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 

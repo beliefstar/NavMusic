@@ -1,20 +1,76 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.NavMusic" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <!-- Primary brand color. -->
-        <!--        <item name="colorPrimary">@color/purple_500</item>-->
-        <!--        <item name="colorPrimaryVariant">@color/purple_700</item>-->
-        <!--        <item name="colorOnPrimary">@color/white</item>-->
-        <item name="colorPrimary">@color/blue_2</item>
-        <item name="colorPrimaryVariant">@color/blue_1</item>
-        <item name="colorOnPrimary">@color/black</item>
+    <style name="Theme.NavMusic" parent="Theme.NavMusic.Simple" />
 
-        <item name="colorSecondary">@color/blue_1</item>
-        <item name="colorSecondaryVariant">@color/blue_2</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <!-- Secondary brand color. -->
-        <!-- Status bar color. -->
+    <style name="Theme.NavMusic.Base" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
+    </style>
+
+    <style name="Theme.NavMusic.Simple" parent="Theme.NavMusic.Base">
+        <item name="colorPrimary">@color/simple_primary</item>
+        <item name="colorPrimaryVariant">@color/simple_primary_variant</item>
+        <item name="colorOnPrimary">@color/simple_on_primary</item>
+        <item name="colorSecondary">@color/simple_secondary</item>
+        <item name="colorSecondaryVariant">@color/simple_secondary_variant</item>
+        <item name="colorOnSecondary">@color/simple_on_secondary</item>
+        <item name="colorSurface">@color/simple_surface</item>
+        <item name="colorOnSurface">@color/simple_on_surface</item>
+        <item name="colorOnBackground">@color/simple_on_background</item>
+        <item name="android:colorBackground">@color/simple_background</item>
+        <item name="android:textColorPrimary">@color/simple_on_background</item>
+        <item name="android:textColorSecondary">@color/simple_on_surface</item>
+        <item name="android:textColorHint">@color/simple_on_surface</item>
+        <item name="android:editTextColor">@color/simple_on_background</item>
+    </style>
+
+    <style name="Theme.NavMusic.Tech" parent="Theme.NavMusic.Base">
+        <item name="colorPrimary">@color/tech_primary</item>
+        <item name="colorPrimaryVariant">@color/tech_primary_variant</item>
+        <item name="colorOnPrimary">@color/tech_on_primary</item>
+        <item name="colorSecondary">@color/tech_secondary</item>
+        <item name="colorSecondaryVariant">@color/tech_secondary_variant</item>
+        <item name="colorOnSecondary">@color/tech_on_secondary</item>
+        <item name="colorSurface">@color/tech_surface</item>
+        <item name="colorOnSurface">@color/tech_on_surface</item>
+        <item name="colorOnBackground">@color/tech_on_background</item>
+        <item name="android:colorBackground">@color/tech_background</item>
+        <item name="android:textColorPrimary">@color/tech_on_background</item>
+        <item name="android:textColorSecondary">@color/tech_on_surface</item>
+        <item name="android:textColorHint">@color/tech_on_surface</item>
+        <item name="android:editTextColor">@color/tech_on_background</item>
+    </style>
+
+    <style name="Theme.NavMusic.Vivid" parent="Theme.NavMusic.Base">
+        <item name="colorPrimary">@color/vivid_primary</item>
+        <item name="colorPrimaryVariant">@color/vivid_primary_variant</item>
+        <item name="colorOnPrimary">@color/vivid_on_primary</item>
+        <item name="colorSecondary">@color/vivid_secondary</item>
+        <item name="colorSecondaryVariant">@color/vivid_secondary_variant</item>
+        <item name="colorOnSecondary">@color/vivid_on_secondary</item>
+        <item name="colorSurface">@color/vivid_surface</item>
+        <item name="colorOnSurface">@color/vivid_on_surface</item>
+        <item name="colorOnBackground">@color/vivid_on_background</item>
+        <item name="android:colorBackground">@color/vivid_background</item>
+        <item name="android:textColorPrimary">@color/vivid_on_background</item>
+        <item name="android:textColorSecondary">@color/vivid_on_surface</item>
+        <item name="android:textColorHint">@color/vivid_on_surface</item>
+        <item name="android:editTextColor">@color/vivid_on_background</item>
+    </style>
+
+    <style name="Theme.NavMusic.Dark" parent="Theme.NavMusic.Base">
+        <item name="colorPrimary">@color/dark_primary</item>
+        <item name="colorPrimaryVariant">@color/dark_primary_variant</item>
+        <item name="colorOnPrimary">@color/dark_on_primary</item>
+        <item name="colorSecondary">@color/dark_secondary</item>
+        <item name="colorSecondaryVariant">@color/dark_secondary_variant</item>
+        <item name="colorOnSecondary">@color/dark_on_secondary</item>
+        <item name="colorSurface">@color/dark_surface</item>
+        <item name="colorOnSurface">@color/dark_on_surface</item>
+        <item name="colorOnBackground">@color/dark_on_background</item>
+        <item name="android:colorBackground">@color/dark_background</item>
+        <item name="android:textColorPrimary">@color/dark_on_background</item>
+        <item name="android:textColorSecondary">@color/dark_on_surface</item>
+        <item name="android:textColorHint">@color/dark_on_surface</item>
+        <item name="android:editTextColor">@color/dark_on_background</item>
     </style>
 </resources>

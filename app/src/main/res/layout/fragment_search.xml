@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
     android:orientation="vertical"
     tools:context=".ui.search.SearchFragment">
 
@@ -16,7 +17,9 @@
             android:id="@+id/et_search_keyword"
             android:layout_width="0sp"
             android:layout_height="wrap_content"
-            android:layout_weight="8"/>
+            android:layout_weight="8"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textColorHint="?android:attr/textColorHint" />
 
         <Button
             android:id="@+id/btn_search"
@@ -29,5 +32,6 @@
     <ListView
         android:id="@+id/lv_search"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"/>
 </LinearLayout>

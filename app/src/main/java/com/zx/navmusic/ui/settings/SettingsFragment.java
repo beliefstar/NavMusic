@@ -11,9 +11,11 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import com.zx.navmusic.R;
 import com.zx.navmusic.config.ConfigCenter;
 import com.zx.navmusic.databinding.FragmentSettingsBinding;
 import com.zx.navmusic.service.MusicLiveProvider;
+import com.zx.navmusic.ui.ThemeHelper;
 import com.zx.navmusic.ui.UIFragment;
 
 import cn.hutool.core.util.NumberUtil;
@@ -26,6 +28,7 @@ public class SettingsFragment extends Fragment {
                              ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentSettingsBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
+        ConfigCenter.ensureCreated(requireContext().getApplicationContext());
         UIFragment.initView(getContext(), root);
 
         try {
@@ -45,6 +48,7 @@ public class SettingsFragment extends Fragment {
         binding.scBluetoothLyric.setChecked(ConfigCenter.isBluetoothLyric());
 //        binding.etBbsToken.setText(ConfigCenter.getBbsToken());
         binding.etFavoriteTep.setText(String.valueOf(ConfigCenter.getFavoriteStep()));
+        initThemeSelector();
 
 //        binding.cbUseLocalMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
 //            ConfigCenter.change(configData -> configData.useLocalMode = isChecked, getContext());
@@ -133,6 +137,36 @@ public class SettingsFragment extends Fragment {
 //        });
 
         return root;
+    }
+
+    private void initThemeSelector() {
+        int themeType = ConfigCenter.getThemeType();
+        int checkedId = R.id.rb_theme_simple;
+        if (themeType == ConfigCenter.THEME_TECH) {
+            checkedId = R.id.rb_theme_tech;
+        } else if (themeType == ConfigCenter.THEME_VIVID) {
+            checkedId = R.id.rb_theme_vivid;
+        } else if (themeType == ConfigCenter.THEME_DARK) {
+            checkedId = R.id.rb_theme_dark;
+        }
+        binding.rgTheme.check(checkedId);
+        binding.rgTheme.setOnCheckedChangeListener((group, id) -> {
+            int newType = ConfigCenter.THEME_SIMPLE;
+            if (id == R.id.rb_theme_tech) {
+                newType = ConfigCenter.THEME_TECH;
+            } else if (id == R.id.rb_theme_vivid) {
+                newType = ConfigCenter.THEME_VIVID;
+            } else if (id == R.id.rb_theme_dark) {
+                newType = ConfigCenter.THEME_DARK;
+            }
+            if (newType == ConfigCenter.getThemeType()) {
+                return;
+            }
+            final int selectedThemeType = newType;
+            ConfigCenter.change(configData -> configData.themeType = selectedThemeType, getContext());
+            ThemeHelper.applyTheme(requireActivity());
+            requireActivity().recreate();
+        });
     }
 
     @Override

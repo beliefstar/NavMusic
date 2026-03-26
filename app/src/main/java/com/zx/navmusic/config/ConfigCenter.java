@@ -10,6 +10,10 @@ import java.util.function.Consumer;
 import cn.hutool.core.util.StrUtil;
 
 public class ConfigCenter {
+    public static final int THEME_SIMPLE = 0;
+    public static final int THEME_TECH = 1;
+    public static final int THEME_VIVID = 2;
+    public static final int THEME_DARK = 3;
 
     public static ConfigCenter INSTANCE;
 
@@ -23,6 +27,12 @@ public class ConfigCenter {
 
     public static void create(Context ctx) {
         INSTANCE = new ConfigCenter(ctx);
+    }
+
+    public static void ensureCreated(Context ctx) {
+        if (INSTANCE == null) {
+            INSTANCE = new ConfigCenter(ctx.getApplicationContext());
+        }
     }
 
     private void init(Context ctx) {
@@ -47,6 +57,12 @@ public class ConfigCenter {
 
         if (configData.bluetoothLyric == null) {
             configData.bluetoothLyric = false;
+        }
+
+        if (configData.themeType == null
+                || configData.themeType < THEME_SIMPLE
+                || configData.themeType > THEME_DARK) {
+            configData.themeType = THEME_SIMPLE;
         }
     }
 
@@ -77,5 +93,9 @@ public class ConfigCenter {
 
     public static boolean isBluetoothLyric() {
         return INSTANCE.configData.bluetoothLyric;
+    }
+
+    public static int getThemeType() {
+        return INSTANCE.configData.themeType;
     }
 }

@@ -24,6 +24,7 @@ import com.zx.navmusic.event.NotifyCenter;
 import com.zx.navmusic.event.NotifyListener;
 import com.zx.navmusic.service.MusicPlayState;
 import com.zx.navmusic.service.strategy.PlayModeStrategy;
+import com.zx.navmusic.ui.ThemeHelper;
 
 import java.util.Locale;
 
@@ -43,6 +44,7 @@ public class PlaybackActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeHelper.applyTheme(this);
         super.onCreate(savedInstanceState);
 
         ActionBar actionBar = getSupportActionBar();

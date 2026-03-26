@@ -1,6 +1,5 @@
 package com.zx.navmusic.ui.home;
 
-import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -40,7 +39,6 @@ public class HomeFragment extends Fragment implements NotifyListener {
     private FragmentHomeBinding binding;
     private TextView tvPlayMusicName;
 
-    private ObjectAnimator rotation;
     private MusicListAdapter listAdapter;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -74,7 +72,6 @@ public class HomeFragment extends Fragment implements NotifyListener {
                 Util.navigatePlaying(ctx);
             }
         });
-//        initCircularImage();
 
         // 恢复播放组件状态
         onMusicStateChange(NotifyCenter.getMusicPlayState());
@@ -123,35 +120,8 @@ public class HomeFragment extends Fragment implements NotifyListener {
         }
         binding.tvPlayMusicArtist.setText(artistCombo);
 
-        if (playState.isPlaying) {
-            if (rotation.isPaused()) {
-                rotation.resume();
-            } else {
-                rotation.start();
-            }
-        } else {
-            if (rotation.isRunning()) {
-                rotation.pause();
-            }
-        }
         listAdapter.onChange(MusicLiveProvider.getInstance().getList(), playState.playSwitchStrategy);
     }
-
-//    private void initCircularImage() {
-//        ImageView imageView = binding.ivPlayMusicNameImage;
-//
-//        // 设置圆形图片
-//        Glide.with(this)
-//                .load(R.drawable.ic_music_plus)
-//                .apply(RequestOptions.circleCropTransform())
-//                .into(imageView);
-//
-//        // 使用 ObjectAnimator 创建旋转动画
-//        rotation = ObjectAnimator.ofFloat(imageView, "rotation", 0f, 360f);
-//        rotation.setDuration(5000);
-//        rotation.setRepeatCount(ValueAnimator.INFINITE);
-//        rotation.setInterpolator(new LinearInterpolator());
-//    }
 
     @Override
     public void onDestroyView() {

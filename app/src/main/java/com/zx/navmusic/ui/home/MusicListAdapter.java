@@ -12,7 +12,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.graphics.ColorUtils;
 
+import com.google.android.material.color.MaterialColors;
 import com.zx.navmusic.MusicService;
 import com.zx.navmusic.R;
 import com.zx.navmusic.common.App;
@@ -154,12 +156,15 @@ public class MusicListAdapter extends BaseAdapter {
 
             // 高亮颜色
             MusicPlayState playState = NotifyCenter.getMusicPlayState();
+            int activeColor = MaterialColors.getColor(view, com.google.android.material.R.attr.colorPrimary);
+            int normalColor = MaterialColors.getColor(view, com.google.android.material.R.attr.colorOnSurface);
+            int mutedColor = ColorUtils.setAlphaComponent(normalColor, 180);
             if (playState != null && Objects.equals(playState.id, item.id)) {
-                text.setTextColor(view.getResources().getColor(R.color.light_blue_900, view.getContext().getTheme()));
+                text.setTextColor(activeColor);
                 text.setTypeface(null, Typeface.BOLD);
                 text.setTextSize(16);
             } else {
-                text.setTextColor(view.getResources().getColor(R.color.gray, view.getContext().getTheme()));
+                text.setTextColor(mutedColor);
                 text.setTypeface(null, Typeface.NORMAL);
                 text.setTextSize(14);
             }

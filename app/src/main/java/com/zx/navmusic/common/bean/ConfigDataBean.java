@@ -14,4 +14,6 @@ public class ConfigDataBean {
     public Boolean favoriteSort = true;
 
     public Boolean bluetoothLyric = false;
+
+    public Integer themeType = 0;
 }

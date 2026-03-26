@@ -15,4 +15,48 @@
     <color name="light_blue_A400">#FF00B0FF</color>
     <color name="black_overlay">#66000000</color>
     <color name="gray">#808080</color>
+
+    <color name="simple_primary">#2F6BFF</color>
+    <color name="simple_primary_variant">#1F4ED8</color>
+    <color name="simple_on_primary">#FFFFFFFF</color>
+    <color name="simple_secondary">#5B8CFF</color>
+    <color name="simple_secondary_variant">#3B76F6</color>
+    <color name="simple_on_secondary">#FFFFFFFF</color>
+    <color name="simple_surface">#FFFFFFFF</color>
+    <color name="simple_on_surface">#1F2A37</color>
+    <color name="simple_background">#F7F9FC</color>
+    <color name="simple_on_background">#808080</color>
+
+    <color name="tech_primary">#00E5FF</color>
+    <color name="tech_primary_variant">#00B8D4</color>
+    <color name="tech_on_primary">#001018</color>
+    <color name="tech_secondary">#7C4DFF</color>
+    <color name="tech_secondary_variant">#5B3BB5</color>
+    <color name="tech_on_secondary">#FFFFFF</color>
+    <color name="tech_surface">#121A33</color>
+    <color name="tech_on_surface">#E6F7FF</color>
+    <color name="tech_background">#0A1024</color>
+    <color name="tech_on_background">#E6F7FF</color>
+
+    <color name="vivid_primary">#FF4D6D</color>
+    <color name="vivid_primary_variant">#E63E5F</color>
+    <color name="vivid_on_primary">#FFFFFF</color>
+    <color name="vivid_secondary">#2EC4B6</color>
+    <color name="vivid_secondary_variant">#1EA89B</color>
+    <color name="vivid_on_secondary">#0F2A26</color>
+    <color name="vivid_surface">#FFFFFF</color>
+    <color name="vivid_on_surface">#2B2D42</color>
+    <color name="vivid_background">#FFF6F0</color>
+    <color name="vivid_on_background">#808080</color>
+
+    <color name="dark_primary">#7C5CFF</color>
+    <color name="dark_primary_variant">#5B3FD6</color>
+    <color name="dark_on_primary">#FFFFFF</color>
+    <color name="dark_secondary">#00C2A8</color>
+    <color name="dark_secondary_variant">#009983</color>
+    <color name="dark_on_secondary">#041411</color>
+    <color name="dark_surface">#171A21</color>
+    <color name="dark_on_surface">#F5F7FA</color>
+    <color name="dark_background">#0F1115</color>
+    <color name="dark_on_background">#808080</color>
 </resources>
